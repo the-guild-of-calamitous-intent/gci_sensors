@@ -1,8 +1,8 @@
-/**************************************\
- * The MIT License (MIT)
- * Copyright (c) 2022 Kevin Walchko
- * see LICENSE for full details
-\**************************************/
+////////////////////////////////////////////////
+//  The MIT License (MIT)
+//  Copyright (c) 2022 Kevin Walchko
+//  see LICENSE for full details
+////////////////////////////////////////////////
 #pragma once
 
 #include <picolibc.h>
@@ -113,6 +113,7 @@ constexpr uint8_t GYRO_RANGE_2000_DPS = (0x06 << 1);
 // };
 
 // constexpr int MAX_CHECK = 10;
+constexpr size_t LSM6DSOX_BUFFER_SIZE = 14;
 
 typedef struct {
   vec_t a, g;
@@ -128,7 +129,7 @@ typedef union {
     vec_raw_t a;         // 2*3 = 6b
   } regs;                // 14b
   uint32_t timestamp;
-  uint8_t b[14];
+  uint8_t b[LSM6DSOX_BUFFER_SIZE];
 } block_t;
 
 typedef struct {

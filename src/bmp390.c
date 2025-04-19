@@ -1,9 +1,3 @@
-// /**************************************\
-//  * The MIT License (MIT)
-//  * Copyright (c) 2022 Kevin Walchko
-//  * see LICENSE for full details
-// \**************************************/
-
 #include "bmp390.h"
 #include <math.h>
 #include <string.h> // memcpy
@@ -168,11 +162,51 @@ static float compensate_pressure(bmp390_i2c_t *hw, const uint32_t uncomp_press) 
   pd1 = hw->calib.par_p2 * hw->calib.t_lin;
   pd2 = hw->calib.par_p3 * (hw->calib.t_lin * hw->calib.t_lin);
   pd3 = hw->calib.par_p4 * (hw->calib.t_lin * hw->calib.t_lin * hw->calib.t_lin);
-  po2 = up * (hw->calib.par_p1 + pd1 + pd2 + pd3);
-  pd1 = up * up;
+  po2 = up * (hw->calib.par_p1 + pd1 + pd2 + pd3); //
+  pd1 = up * up;                                   //
   pd2 = hw->calib.par_p9 + hw->calib.par_p10 * hw->calib.t_lin;
   pd3 = pd1 * pd2;
-  pd4 = pd3 + up * up * up * hw->calib.par_p11;
+  pd4 = pd3 + up * up * up * hw->calib.par_p11; //
+  prs = po1 + po2 + pd4;
+
+  return prs;
+}
+
+// typedef struct {
+//   float po1;
+//   float po2const;
+//   float a, b;
+// } comp_press_t;
+
+static float compensate_pressure_alt(bmp390_i2c_t *hw, const uint32_t uncomp_press) { // datasheet pg 56
+  float pd1, pd2, pd3, pd4, po1, po2, prs;
+  const float up = (float)uncomp_press;
+  comp_press_t cp;
+
+  // po1 - const
+  // po2 - up * const(hw->calib.par_p1 + pd1 + pd2 + pd3)
+  // pd4 - up^2 * const + up^3 * const
+  // pressure = po1 + po2 + pd
+
+  pd1    = hw->calib.par_p6 * hw->calib.t_lin;
+  pd2    = hw->calib.par_p7 * (hw->calib.t_lin * hw->calib.t_lin);
+  pd3    = hw->calib.par_p8 * (hw->calib.t_lin * hw->calib.t_lin * hw->calib.t_lin);
+  po1    = hw->calib.par_p5 + pd1 + pd2 + pd3; // const
+  cp.po1 = po1;
+
+  pd1         = hw->calib.par_p2 * hw->calib.t_lin;
+  pd2         = hw->calib.par_p3 * (hw->calib.t_lin * hw->calib.t_lin);
+  pd3         = hw->calib.par_p4 * (hw->calib.t_lin * hw->calib.t_lin * hw->calib.t_lin);
+  po2         = up * (hw->calib.par_p1 + pd1 + pd2 + pd3); // pd1, pd2, pd3
+  cp.po2const = hw->calib.par_p1 + pd1 + pd2 + pd3;
+
+  pd1  = up * up; //
+  pd2  = hw->calib.par_p9 + hw->calib.par_p10 * hw->calib.t_lin;
+  pd3  = pd1 * pd2;
+  pd4  = pd3 + up * up * up * hw->calib.par_p11; //
+  cp.a = pd3;
+  cp.b = hw->calib.par_p11;
+
   prs = po1 + po2 + pd4;
 
   return prs;

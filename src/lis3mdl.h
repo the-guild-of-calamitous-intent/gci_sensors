@@ -1,8 +1,8 @@
-/**************************************\
- * The MIT License (MIT)
- * Copyright (c) 2022 Kevin Walchko
- * see LICENSE for full details
-\**************************************/
+////////////////////////////////////////////////
+//  The MIT License (MIT)
+//  Copyright (c) 2022 Kevin Walchko
+//  see LICENSE for full details
+////////////////////////////////////////////////
 #pragma once
 
 // #if defined(__USE_SENSOR_LIS3MDL__)
@@ -33,30 +33,6 @@ constexpr uint8_t ODR_300HZ           = LIS3MDL_HIP; // 2
 constexpr uint8_t ODR_560HZ           = LIS3MDL_MP;  // 1
 constexpr uint8_t ODR_1000HZ          = LIS3MDL_LP;  // 0
 
-// typedef enum : uint8_t {
-//   RANGE_4GAUSS  = 0x00, // default
-//   RANGE_8GAUSS  = 0x20,
-//   RANGE_12GAUSS = 0x40,
-//   RANGE_16GAUSS = 0x60
-// } Range;
-
-// typedef enum : uint8_t {
-//   ODR_155HZ  = LIS3MDL_UHP, // 3
-//   ODR_300HZ  = LIS3MDL_HIP, // 2
-//   ODR_560HZ  = LIS3MDL_MP,  // 1
-//   ODR_1000HZ = LIS3MDL_LP   // 0
-// } Odr;
-
-// enum mdl_error : uint8_t {
-//   NO_ERROR,
-//   ERROR_WHOAMI,
-//   ERROR_REG1,
-//   ERROR_REG2,
-//   ERROR_REG3,
-//   ERROR_REG4,
-//   ERROR_REG5
-// };
-
 typedef struct {
   float x, y, z;
   bool ok; // error?
@@ -74,6 +50,7 @@ typedef struct {
   uint8_t addr;
   buff_t buff;
   float sm[12];
+  float scale;
 } lis3mdl_i2c_t;
 
 lis3mdl_i2c_t *lis3mdl_i2c_init(uint32_t port, uint8_t addr, uint8_t range,

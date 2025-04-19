@@ -31,10 +31,12 @@ int main() {
   }
 
   while (true) {
+    sleep_ms(5); // ~200 Hz
+
     lis3mdl_t m = lis3mdl_read(mag);
     if (m.ok == false) continue;
 
     // printf("-----------------------------\n");
-    printf("Mags: %f %f %f (normalized)\n", m.x, m.y, m.z);
+    printf("Mags: %f %f %f\n", m.x, m.y, m.z);
   }
 }

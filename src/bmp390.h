@@ -1,8 +1,8 @@
-/**************************************\
- * The MIT License (MIT)
- * Copyright (c) 2022 Kevin Walchko
- * see LICENSE for full details
-\**************************************/
+////////////////////////////////////////////////
+//  The MIT License (MIT)
+//  Copyright (c) 2022 Kevin Walchko
+//  see LICENSE for full details
+////////////////////////////////////////////////
 /*
 
 https://www.mide.com/air-pressure-at-altitude-calculator
@@ -83,6 +83,12 @@ typedef struct {
 
   float t_lin; // was int64_t??
 } bmp3_reg_calib_data;
+
+typedef struct {
+  float po1;
+  float po2const;
+  float a, b;
+} comp_press_t;
 
 // typedef struct {
 //   int32_t pressure, temperature;

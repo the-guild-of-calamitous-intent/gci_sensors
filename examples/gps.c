@@ -1,3 +1,4 @@
+
 #include "pa1010d.h"
 #include "pmtk.h"
 #include <hardware/gpio.h>
@@ -29,9 +30,9 @@ int main() {
   char nema[250];
 
   while (1) {
-    uint32_t num = pa1010d_read(gps, nema, sizeof(nema));
-    if (num > 0) printf("GPS[%ld]: %s\n", num, nema);
+    int32_t num = pa1010d_read(gps, nema, sizeof(nema));
+    if (num > 0) printf("GPS[%d]: %s\n", num, nema);
     else printf("*** Bad read ***\n");
-    sleep_ms(100);
+    sleep_ms(1000);
   }
 }

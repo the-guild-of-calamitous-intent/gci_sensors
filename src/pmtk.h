@@ -1,8 +1,8 @@
-/**************************************\
- * The MIT License (MIT)
- * Copyright (c) 2022 Kevin Walchko
- * see LICENSE for full details
-\**************************************/
+////////////////////////////////////////////////
+//  The MIT License (MIT)
+//  Copyright (c) 2022 Kevin Walchko
+//  see LICENSE for full details
+////////////////////////////////////////////////
 #pragma once
 
 #include <stdint.h>

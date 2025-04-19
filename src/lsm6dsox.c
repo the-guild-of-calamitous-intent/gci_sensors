@@ -46,12 +46,13 @@ lsm6dsox_i2c_t *lsm6dsox_i2c_init(uint8_t port, uint8_t addr, uint8_t accel_rang
   uint8_t cmd;
 
   lsm6dsox_i2c_t *hw = (lsm6dsox_i2c_t *)calloc(1, sizeof(lsm6dsox_i2c_t));
-  hw->i2c            = (port == 0) ? i2c0 : i2c1;
-  hw->addr           = addr;
+  if (hw == NULL) return NULL;
+  hw->i2c  = (port == 0) ? i2c0 : i2c1;
+  hw->addr = addr;
   // readRegister(REG_WHO_AM_I, &id);
   // if (!(id == WHO_AM_I)) return ERROR_WHOAMI;
   ok = gci_i2c_read(hw->i2c, hw->addr, REG_WHO_AM_I, &id, 1);
-  if (!(id == WHO_AM_I) || (ok < 0)) return NULL; // ERROR_WHOAMI;
+  if ((id != WHO_AM_I) || (ok < 0)) return NULL; // ERROR_WHOAMI;
 
   float acal[12] = {1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0.};
   memcpy(hw->acal, acal, 12 * sizeof(float));
@@ -61,6 +62,9 @@ lsm6dsox_i2c_t *lsm6dsox_i2c_init(uint8_t port, uint8_t addr, uint8_t accel_rang
   // reset memory
   // MSB [ BOOT BDU H_LACTIVE PP_OD SIM IF_INC 0 SW_RESET ] LSB
   // if (!writeRegister(REG_CTRL3_C, 0x84)) return 99;
+  // cmd = 0x84;
+  // ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL3_C, &cmd, 1);
+  // if (ok < 0) return NULL;
 
   // Set the Accelerometer control register to work at 104 Hz, 4 g,and in
   // bypass mode and enable ODR/4 low pass filter (check figure9 of LSM6DSOX's
@@ -85,7 +89,6 @@ lsm6dsox_i2c_t *lsm6dsox_i2c_init(uint8_t port, uint8_t addr, uint8_t accel_rang
 
   // if (!writeRegister(REG_CTRL1_XL, odr | accel_range))
   //   return ERROR_CTRL1_XL;
-
   cmd = odr | accel_range;
   ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL1_XL, &cmd, 1);
   if (ok < 0) return NULL;
@@ -111,11 +114,14 @@ lsm6dsox_i2c_t *lsm6dsox_i2c_init(uint8_t port, uint8_t addr, uint8_t accel_rang
 
   // disable fifo
   // LSM6DSOX_FIFO_CTRL4 bypassmode (0)
-  uint8_t DRDY_MASK = 0x08;
   // if (!writeRegister(REG_FIFO_CTRL4, 0x00)) return ERROR_DISABLE_FIFO;
+  // cmd = 0x00;
+  // ok = gci_i2c_write(hw->i2c, hw->addr, REG_FIFO_CTRL4, &cmd, 1);
+  // if (ok < 0) return NULL;
+  // uint8_t DRDY_MASK = 0x08;
   // if (!writeRegister(REG_FIFO_CTRL4, DRDY_MASK)) return ERROR_CTRL4_C;
-  // cmd = IF_INC;
-  ok = gci_i2c_write(hw->i2c, hw->addr, REG_FIFO_CTRL4, &DRDY_MASK, 1);
+  cmd = 0x08;
+  ok  = gci_i2c_write(hw->i2c, hw->addr, REG_FIFO_CTRL4, &cmd, 1);
   if (ok < 0) return NULL;
 
   // set gyroscope power mode to high performance and bandwidth to 16 MHz
@@ -137,6 +143,9 @@ lsm6dsox_i2c_t *lsm6dsox_i2c_init(uint8_t port, uint8_t addr, uint8_t accel_rang
   // LSM6DSOX_I3C_BUS_AVB
   // uint8_t val = 0xD0; // 0b1110000; // these are default
   // if (!writeRegister(REG_CTRL9_XL, val)) return ERROR_CTRL9_XL;
+  cmd = 0xD1;
+  ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL9_XL, &cmd, 1);
+  if (ok < 0) return NULL;
 
   // enable timestamp
   // if (!writeRegister(REG_CTRL10_C, TIMESTAMP_EN))
@@ -148,15 +157,26 @@ lsm6dsox_i2c_t *lsm6dsox_i2c_init(uint8_t port, uint8_t addr, uint8_t accel_rang
   // enable INT1 and INT2 pins when data is ready
   // if (!writeRegister(REG_INT1_CTRL, INT_DRDY_XL))
   //   return ERROR_ENABLE_INT_ACCEL; // accel
+  cmd = INT_DRDY_XL;
+  ok  = gci_i2c_write(hw->i2c, hw->addr, REG_INT1_CTRL, &cmd, 1);
+  if (ok < 0) return NULL;
 
   // if (!writeRegister(REG_INT2_CTRL, INT_DRDY_G))
   //   return ERROR_ENABLE_INT_GYRO; // gyro
+  cmd = INT_DRDY_G;
+  ok  = gci_i2c_write(hw->i2c, hw->addr, REG_INT2_CTRL, &cmd, 1);
+  if (ok < 0) return NULL;
 
   return hw;
 }
 
 lsm6dsox_i2c_t *lsm6dsox_i2c_init_defaults(uint8_t port) {
-  return lsm6dsox_i2c_init(port, LSM6DSOX_ADDRESS, ACCEL_RANGE_4_G, GYRO_RANGE_2000_DPS, RATE_104_HZ);
+  return lsm6dsox_i2c_init(
+      port,
+      LSM6DSOX_ADDRESS,
+      ACCEL_RANGE_4_G,
+      GYRO_RANGE_2000_DPS,
+      RATE_104_HZ);
 }
 
 // MSB 10000101 LSB = 128 + 4 + 1 = 133
@@ -167,9 +187,6 @@ bool lsm6dsox_reboot(lsm6dsox_i2c_t *hw) {
   if (ok < 0) return false;
   return true;
 }
-
-// void set_accel_cal(float cal[12]) { memcpy(acal, cal, 12 * sizeof(float)); }
-// void set_gyro_cal(float cal[12]) { memcpy(gcal, cal, 12 * sizeof(float)); }
 
 // const lsm6dsox_raw_t read_raw() {
 //   lsm6dsox_raw_t ret;
@@ -197,24 +214,26 @@ bool lsm6dsox_reboot(lsm6dsox_i2c_t *hw) {
 //   return ret;
 // }
 
-lsm6dsox_t lsm6dsox_read(lsm6dsox_i2c_t *hw) { // accel - g's, gyro - dps, temp - C
-  // const lsm6dsox_raw_t raw = read_raw();
+// accel - g's, gyro - dps, temp - C
+lsm6dsox_t lsm6dsox_read(lsm6dsox_i2c_t *hw) {
   int32_t ok;
   lsm6dsox_t ret;
   ret.ok = false;
-  // if (raw.ok == false) return ret;
-  if (!lsm6dsox_ready(hw)) return ret;
+  printf("start read\n");
+  if (lsm6dsox_ready(hw) == false) return ret;
+  printf("ready\n");
 
   // if (!readRegisters(REG_OUT_TEMP_L, sizeof(block.b), block.b)) return ret;
-  ok = gci_i2c_read(hw->i2c, hw->addr, REG_OUT_TEMP_L, hw->block.b, 14);
+  ok = gci_i2c_read(hw->i2c, hw->addr, REG_OUT_TEMP_L, hw->block.b, LSM6DSOX_BUFFER_SIZE);
   if (ok < 0) return ret;
+  printf("read data\n");
 
-  ret.a.x = hw->a_scale * hw->block.regs.a.x;
-  ret.a.y = hw->a_scale * hw->block.regs.a.y;
-  ret.a.z = hw->a_scale * hw->block.regs.a.z;
-  ret.g.x = hw->g_scale * hw->block.regs.g.x;
-  ret.g.y = hw->g_scale * hw->block.regs.g.y;
-  ret.g.z = hw->g_scale * hw->block.regs.g.z;
+  ret.a.x = hw->a_scale * (float)hw->block.regs.a.x;
+  ret.a.y = hw->a_scale * (float)hw->block.regs.a.y;
+  ret.a.z = hw->a_scale * (float)hw->block.regs.a.z;
+  ret.g.x = hw->g_scale * (float)hw->block.regs.g.x;
+  ret.g.y = hw->g_scale * (float)hw->block.regs.g.y;
+  ret.g.z = hw->g_scale * (float)hw->block.regs.g.z;
   // ret.temperature = hw->block.regs.temperature; // 52Hz, pg13, Table 4
   // pg 13, Table 4, temp ODR is ~52Hz
   ret.temperature = (float)(hw->block.regs.temperature) * TEMP_SCALE + 25.0f;
@@ -223,13 +242,16 @@ lsm6dsox_t lsm6dsox_read(lsm6dsox_i2c_t *hw) { // accel - g's, gyro - dps, temp 
   ok = gci_i2c_read(hw->i2c, hw->addr, REG_TIMESTAMP0, hw->block.b, 4);
   if (ok < 0) return ret;
 
+  printf("read timestamp\n");
+
   ret.timestamp_us = hw->block.timestamp * 25; // 25 usec per count
   ret.ok           = true;
 
   return ret;
 }
 
-lsm6dsox_t lsm6dsox_read_cal(lsm6dsox_i2c_t *hw) { // accel - g's, gyro - dps, temp - C
+// accel - g's, gyro - dps, temp - C
+lsm6dsox_t lsm6dsox_read_cal(lsm6dsox_i2c_t *hw) {
   const lsm6dsox_t m = lsm6dsox_read(hw);
   if (m.ok == false) return m;
   float *acal = hw->acal;
@@ -255,24 +277,6 @@ lsm6dsox_t lsm6dsox_read_cal(lsm6dsox_i2c_t *hw) { // accel - g's, gyro - dps, t
   return ret;
 }
 
-bool lsm6dsox_ready(lsm6dsox_i2c_t *hw) {
-  // TDA: temperature
-  // GDA: gyro
-  // XLDA: accel
-  //                             4   2    1
-  // STATUS_REG: MSB 0 0 0 0 0 TDA GDA XLDA LSB
-  // return readRegister(REG_STATUS);
-  // uint8_t val = readRegister(REG_STATUS) & 3;
-  uint8_t val = 0;
-  // readRegister(REG_STATUS, &val);
-
-  int32_t ok = gci_i2c_read(hw->i2c, hw->addr, REG_STATUS, &val, 1);
-  if (ok < 0) return false;
-
-  return val < 3 ? false : true;
-  // return val == 3;
-}
-
 int32_t lsm6dsox_available(lsm6dsox_i2c_t *hw) {
   // TDA: temperature
   // GDA: gyro
@@ -282,25 +286,12 @@ int32_t lsm6dsox_available(lsm6dsox_i2c_t *hw) {
   uint8_t val = 0;
   // readRegister(REG_STATUS, &val);
   int32_t ok = gci_i2c_read(hw->i2c, hw->addr, REG_STATUS, &val, 1);
+  printf("avail/ready: %d %d\n", ok, (int)val);
   if (ok < 0) return ok;
   return val;
 }
 
-// sox_regs_t getRegs() {
-//   uint8_t reg;
-//   sox_regs_t regs;
-//   readRegister(REG_CTRL1_XL, &reg);
-//   regs.CTRL1_XL = reg;
-//   readRegister(REG_CTRL2_G);
-//   regs.CTRL2_G  = reg;
-//   readRegister(REG_CTRL3_C);
-//   regs.CTRL3_C  = reg;
-//   regs.CTRL4_C  = readRegister(REG_CTRL4_C);
-//   regs.CTRL5_C  = readRegister(REG_CTRL5_C);
-//   regs.CTRL6_C  = readRegister(REG_CTRL6_C);
-//   regs.CTRL7_G  = readRegister(REG_CTRL7_G);
-//   regs.CTRL8_XL = readRegister(REG_CTRL8_XL);
-//   regs.CTRL9_XL = readRegister(REG_CTRL9_XL);
-//   regs.CTRL10_C = readRegister(REG_CTRL10_C);
-//   return regs;
-// }
+bool lsm6dsox_ready(lsm6dsox_i2c_t *hw) {
+  // int32_t val = lsm6dsox_available(hw);
+  return (lsm6dsox_available(hw) < 3) ? false : true;
+}

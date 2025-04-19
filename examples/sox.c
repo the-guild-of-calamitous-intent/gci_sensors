@@ -21,7 +21,7 @@ int main() {
   printf(">> i2c SDA: %u SCL: %u\n", i2c_sda, i2c_scl);
   bi_decl(bi_2pins_with_func(i2c_sda, i2c_scl, GPIO_FUNC_I2C)); // compile info
 
-  printf("/// Accel/Gyros START ///\n");
+  printf("/// ACCEL/GYRO START ///\n");
 
   lsm6dsox_i2c_t *imu = NULL;
   while (true) {
@@ -33,12 +33,18 @@ int main() {
 
   while (true) {
     lsm6dsox_t i = lsm6dsox_read(imu);
-    if (i.ok == false) continue;
+    if (i.ok == false) {
+      printf("*** Bad read ***\n");
+      sleep_ms(1000);
+      continue;
+    }
 
     printf("-----------------------------\n");
     printf("Accels: %f %f %f g\n", i.a.x, i.a.y, i.a.z);
     printf("Gyros: %f %f %f dps\n", i.g.x, i.g.y, i.g.z);
     printf("Temperature: %f C\n", i.temperature);
     printf("Timestamp: %llu msec\n", i.timestamp_us);
+
+    sleep_ms(500);
   }
 }

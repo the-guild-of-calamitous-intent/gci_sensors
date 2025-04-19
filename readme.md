@@ -41,7 +41,7 @@ int32_t sensor_available(sensor_i2c_t*)
 
 # MIT License
 
-**Copyright (c) 2023 The Guild of Calamitous Intent**
+**Copyright (c) 2022 The Guild of Calamitous Intent**
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
