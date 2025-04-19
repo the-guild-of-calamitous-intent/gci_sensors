@@ -110,37 +110,26 @@ typedef struct {
 constexpr uint8_t BMP390_ADDR     = 0x77;
 constexpr uint8_t BMP390_ADDR_ALT = 0x76;
 
-// using bmp390_t = gci::pt_t;
-// using bmp390_raw_t = gci::pt_raw_t;
-
-typedef struct {
-  int32_t pressure, temperature;
-  bool ok;
-
-  // int32_t operator[](size_t i) {
-  //   return (i == 0) ? pressure : temperature;
-  // }
-} bmp390_raw_t;
+// typedef struct {
+//   int32_t pressure, temperature;
+//   bool ok;
+// } bmp390_raw_t;
 
 typedef struct {
   float pressure, temperature;
   bool ok;
-
-  // float operator[](size_t i) {
-  //   return (i == 0) ? pressure : temperature;
-  // }
 } bmp390_t;
 
-enum bmp_error : uint8_t {
-  NO_ERROR,
-  ERROR_WHOAMI,
-  ERROR_RESET,
-  ERROR_CAL_DATA,
-  ERROR_ODR,
-  ERROR_IIR_FILTER,
-  ERROR_INT_PIN,
-  ERROR_PWR_MODE
-};
+// enum bmp_error : uint8_t {
+//   NO_ERROR,
+//   ERROR_WHOAMI,
+//   ERROR_RESET,
+//   ERROR_CAL_DATA,
+//   ERROR_ODR,
+//   ERROR_IIR_FILTER,
+//   ERROR_INT_PIN,
+//   ERROR_PWR_MODE
+// };
 
 typedef struct {
   i2c_inst_t *i2c;
@@ -149,8 +138,8 @@ typedef struct {
   uint8_t buffer[LEN_P_T_DATA];
 } bmp390_i2c_t;
 
-bmp390_i2c_t *bmp390_init(bmp390_i2c_t *hw, uint8_t addr, uint8_t odr,
-                          uint8_t iir);
+bmp390_i2c_t *bmp390_i2c_init(uint32_t port, uint8_t addr, uint8_t odr,
+                              uint8_t iir);
 const bmp390_t bmp390_read(bmp390_i2c_t *hw);
 bool bmp390_ready(bmp390_i2c_t *hw);
 

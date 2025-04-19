@@ -1,25 +1,24 @@
 
-#include <picolibc.h>
 #include "lsm6dsox.h"
+#include <picolibc.h>
 
-
-lsm6dsox_i2c_t* lsm6dsox_i2c_init(uint8_t port, uint8_t addr, uint8_t accel_range, uint8_t gyro_range,uint8_t odr) {
+lsm6dsox_i2c_t *lsm6dsox_i2c_init(uint8_t port, uint8_t addr, uint8_t accel_range, uint8_t gyro_range, uint8_t odr) {
   uint8_t id;
   int32_t ok;
   uint8_t cmd;
 
   lsm6dsox_i2c_t *hw = (lsm6dsox_i2c_t *)calloc(1, sizeof(lsm6dsox_i2c_t));
-  hw->i2c          = (port == 0) ? i2c0 : i2c1;
-  hw->addr         = addr;
+  hw->i2c            = (port == 0) ? i2c0 : i2c1;
+  hw->addr           = addr;
   // readRegister(REG_WHO_AM_I, &id);
   // if (!(id == WHO_AM_I)) return ERROR_WHOAMI;
   ok = gci_i2c_read(hw->i2c, hw->addr, REG_WHO_AM_I, &id, 1);
   if (!(id == WHO_AM_I) || (ok < 0)) return NULL; // ERROR_WHOAMI;
 
   float acal[12] = {1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0.};
-  memcpy(hw->acal, acal, 12*sizeof(float));
+  memcpy(hw->acal, acal, 12 * sizeof(float));
   float gcal[12] = {1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0.};
-  memcpy(hw->gcal, gcal, 12*sizeof(float));
+  memcpy(hw->gcal, gcal, 12 * sizeof(float));
 
   // reset memory
   // MSB [ BOOT BDU H_LACTIVE PP_OD SIM IF_INC 0 SW_RESET ] LSB
@@ -50,7 +49,7 @@ lsm6dsox_i2c_t* lsm6dsox_i2c_init(uint8_t port, uint8_t addr, uint8_t accel_rang
   //   return ERROR_CTRL1_XL;
 
   cmd = odr | accel_range;
-  ok = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL1_XL, &cmd, 1);
+  ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL1_XL, &cmd, 1);
   if (ok < 0) return NULL;
 
   if (gyro_range == GYRO_RANGE_125_DPS) hw->g_scale = 125.0f / 32768.0f;
@@ -62,14 +61,14 @@ lsm6dsox_i2c_t* lsm6dsox_i2c_init(uint8_t port, uint8_t addr, uint8_t accel_rang
 
   // if (!writeRegister(REG_CTRL2_G, odr | gyro_range)) return ERROR_CTRL2_G;
   cmd = odr | gyro_range;
-  ok = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL2_G, &cmd, 1);
+  ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL2_G, &cmd, 1);
   if (ok < 0) return NULL;
 
   // auto-increament during multi-byte reads
   // continous sampling BDU = 0
   // if (!writeRegister(REG_CTRL3_C, IF_INC)) return ERROR_CTRL3_C;
   cmd = IF_INC;
-  ok = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL3_C, &cmd, 1);
+  ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL3_C, &cmd, 1);
   if (ok < 0) return NULL;
 
   // disable fifo
@@ -84,7 +83,7 @@ lsm6dsox_i2c_t* lsm6dsox_i2c_init(uint8_t port, uint8_t addr, uint8_t accel_rang
   // set gyroscope power mode to high performance and bandwidth to 16 MHz
   // if (!writeRegister(REG_CTRL7_G, 0x00)) return ERROR_CTRL7_G;
   cmd = 0x00;
-  ok = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL7_G, &cmd, 1);
+  ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL7_G, &cmd, 1);
   if (ok < 0) return NULL;
 
   // Set LPF and HPF config register
@@ -92,7 +91,7 @@ lsm6dsox_i2c_t* lsm6dsox_i2c_init(uint8_t port, uint8_t addr, uint8_t accel_rang
   // disable HPF, HP_REF_MODE_XL = 0x00
   // if (!writeRegister(REG_CTRL8_XL, 0x00)) return ERROR_CTRL8_XL;
   cmd = 0x00;
-  ok = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL8_XL, &cmd, 1);
+  ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL8_XL, &cmd, 1);
   if (ok < 0) return NULL;
 
   // disable I3C
@@ -105,7 +104,7 @@ lsm6dsox_i2c_t* lsm6dsox_i2c_init(uint8_t port, uint8_t addr, uint8_t accel_rang
   // if (!writeRegister(REG_CTRL10_C, TIMESTAMP_EN))
   //   return ERROR_CTRL10_C;
   cmd = TIMESTAMP_EN;
-  ok = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL10_C, &cmd, 1);
+  ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL10_C, &cmd, 1);
   if (ok < 0) return NULL;
 
   // enable INT1 and INT2 pins when data is ready
@@ -118,14 +117,14 @@ lsm6dsox_i2c_t* lsm6dsox_i2c_init(uint8_t port, uint8_t addr, uint8_t accel_rang
   return hw;
 }
 
-lsm6dsox_i2c_t* lsm6dsox_i2c_init_defaults(uint8_t port) {
-  return lsm6dsox_i2c_init(port, LSM6DSOX_ADDRESS,ACCEL_RANGE_4_G, GYRO_RANGE_2000_DPS, RATE_104_HZ);
+lsm6dsox_i2c_t *lsm6dsox_i2c_init_defaults(uint8_t port) {
+  return lsm6dsox_i2c_init(port, LSM6DSOX_ADDRESS, ACCEL_RANGE_4_G, GYRO_RANGE_2000_DPS, RATE_104_HZ);
 }
 
 // MSB 10000101 LSB = 128 + 4 + 1 = 133
 bool lsm6dsox_reboot(lsm6dsox_i2c_t *hw) {
   uint8_t cmd = 133;
-  // return writeRegister(REG_CTRL3_C, 133); 
+  // return writeRegister(REG_CTRL3_C, 133);
   int32_t ok = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL3_C, &cmd, 1);
   if (ok < 0) return false;
   return true;
@@ -172,12 +171,12 @@ lsm6dsox_t lsm6dsox_read(lsm6dsox_i2c_t *hw) { // accel - g's, gyro - dps, temp 
   ok = gci_i2c_read(hw->i2c, hw->addr, REG_OUT_TEMP_L, hw->block.b, 14);
   if (ok < 0) return ret;
 
-  ret.a.x  = hw->a_scale * hw->block.regs.a.x;
-  ret.a.y  = hw->a_scale * hw->block.regs.a.y;
-  ret.a.z  = hw->a_scale * hw->block.regs.a.z;
-  ret.g.x  = hw->g_scale * hw->block.regs.g.x;
-  ret.g.y  = hw->g_scale * hw->block.regs.g.y;
-  ret.g.z  = hw->g_scale * hw->block.regs.g.z;
+  ret.a.x = hw->a_scale * hw->block.regs.a.x;
+  ret.a.y = hw->a_scale * hw->block.regs.a.y;
+  ret.a.z = hw->a_scale * hw->block.regs.a.z;
+  ret.g.x = hw->g_scale * hw->block.regs.g.x;
+  ret.g.y = hw->g_scale * hw->block.regs.g.y;
+  ret.g.z = hw->g_scale * hw->block.regs.g.z;
   // ret.temperature = hw->block.regs.temperature; // 52Hz, pg13, Table 4
   // pg 13, Table 4, temp ODR is ~52Hz
   ret.temperature = (float)(hw->block.regs.temperature) * TEMP_SCALE + 25.0f;
@@ -187,7 +186,7 @@ lsm6dsox_t lsm6dsox_read(lsm6dsox_i2c_t *hw) { // accel - g's, gyro - dps, temp 
   if (ok < 0) return ret;
 
   ret.timestamp_us = hw->block.timestamp * 25; // 25 usec per count
-  ret.ok = true;
+  ret.ok           = true;
 
   return ret;
 }
@@ -207,13 +206,13 @@ lsm6dsox_t lsm6dsox_read_cal(lsm6dsox_i2c_t *hw) { // accel - g's, gyro - dps, t
   ret.a.z = acal[8] * m.a.x + acal[9] * m.a.y + acal[10] * m.a.z - acal[11];
 
   // gyro = A * gyro_meas - bias
-  ret.g.x  = gcal[0] * m.g.x + gcal[1] * m.g.y + gcal[2] * m.g.z - gcal[3];
-  ret.g.y  = gcal[4] * m.g.x + gcal[5] * m.g.y + gcal[6] * m.g.z - gcal[7];
-  ret.g.z  = gcal[8] * m.g.x + gcal[9] * m.g.y + gcal[10] * m.g.z - gcal[11];
+  ret.g.x = gcal[0] * m.g.x + gcal[1] * m.g.y + gcal[2] * m.g.z - gcal[3];
+  ret.g.y = gcal[4] * m.g.x + gcal[5] * m.g.y + gcal[6] * m.g.z - gcal[7];
+  ret.g.z = gcal[8] * m.g.x + gcal[9] * m.g.y + gcal[10] * m.g.z - gcal[11];
 
-  ret.timestamp_us   = m.timestamp_us; // 25 usec per count
-  ret.temperature = m.temperature;
-  ret.ok   = true;
+  ret.timestamp_us = m.timestamp_us; // 25 usec per count
+  ret.temperature  = m.temperature;
+  ret.ok           = true;
 
   return ret;
 }

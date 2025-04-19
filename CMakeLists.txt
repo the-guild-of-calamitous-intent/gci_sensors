@@ -10,7 +10,7 @@ set(PICO_BOARD "pico") # before pico_sdk_import.cmake, pico, pico2, pico_w
 include(${PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 
 # Set project name and language
-project(pico_sensors C CXX ASM)
+project(gci_sensors C CXX ASM)
 set(CMAKE_C_STANDARD 23) # Options: 90, 99, 11, 17, 23 (or gnu90, gnu99, etc.)
 # set(CMAKE_C_STANDARD_REQUIRED ON) # Enforce the standard
 # set(CMAKE_C_EXTENSIONS OFF) # Disable GNU extensions (optional, use ON for gnuXX)
@@ -56,11 +56,10 @@ add_subdirectory(extlib/gci_pico)
 add_library(${PROJECT_NAME}
   src/bmp390.c
   src/lsm6dsox.c
+  src/lis3mdl.c
 )
-target_include_directories(${PROJECT_NAME} PUBLIC src)
-target_link_libraries(${PROJECT_NAME} PRIVATE ${pico_libs} picolibc)
-target_include_directories(${PROJECT_NAME} PRIVATE extlib/gci_pico/src)
-# target_compile_definitions(${PROJECT_NAME} PUBLIC BOARD_TYPE=${PICO_BOARD})
+target_include_directories(${PROJECT_NAME} PUBLIC src extlib/gci_pico/src)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${pico_libs} pico_c)
 
 
 pico_enable_stdio_usb(${PROJECT_NAME} 1)
@@ -68,5 +67,5 @@ pico_enable_stdio_uart(${PROJECT_NAME} 0)
 
 
 if (BUILD_EXAMPLES)
-  # add_subdirectory(examples)
+  add_subdirectory(examples)
 endif()

@@ -7,11 +7,11 @@
 #include "bmp390.h"
 #include <math.h>
 
-inline uint32_t to_24b(uint8_t *b) {
+static inline uint32_t to_24b(uint8_t *b) {
   return (uint32_t)b[0] | (uint32_t)b[1] << 8 | (uint32_t)b[2] << 16;
 }
 
-inline uint16_t to_16b(uint8_t msb, uint8_t lsb) {
+static inline uint16_t to_16b(uint8_t msb, uint8_t lsb) {
   return ((uint16_t)msb << 8) | (uint16_t)lsb;
 }
 
@@ -63,18 +63,16 @@ static bool get_calib_data(bmp390_i2c_t *hw) {
   uint8_t tmp[LEN_CALIB_DATA];
   // bool ok = readRegisters(REG_CALIB_DATA, LEN_CALIB_DATA, tmp);
   // if (!ok) return false;
-  int32_t ok =
-      gci_i2c_read(hw->i2c, hw->addr, REG_CALIB_DATA, tmp, LEN_CALIB_DATA);
+  int32_t ok;
+  ok = gci_i2c_read(hw->i2c, hw->addr, REG_CALIB_DATA, tmp, LEN_CALIB_DATA);
   if (ok < 0) return false;
 
   hw->calib.par_t1 = (float)to_16b(tmp[1], tmp[0]) / powf(2, -8);
   hw->calib.par_t2 = (float)to_16b(tmp[3], tmp[2]) / powf(2, 30);
   hw->calib.par_t3 = (float)tmp[4] / powf(2, 48);
 
-  hw->calib.par_p1 =
-      ((float)to_16b(tmp[6], tmp[5]) - powf(2, 14)) / powf(2, 20);
-  hw->calib.par_p2 =
-      ((float)to_16b(tmp[8], tmp[7]) - powf(2, 14)) / powf(2, 29);
+  hw->calib.par_p1  = ((float)to_16b(tmp[6], tmp[5]) - powf(2, 14)) / powf(2, 20);
+  hw->calib.par_p2  = ((float)to_16b(tmp[8], tmp[7]) - powf(2, 14)) / powf(2, 29);
   hw->calib.par_p3  = (float)tmp[9] / powf(2, 32);
   hw->calib.par_p4  = (float)tmp[10] / powf(2, 37);
   hw->calib.par_p5  = (float)to_16b(tmp[12], tmp[11]) / powf(2, -3);
@@ -130,50 +128,44 @@ static bool soft_reset(bmp390_i2c_t *hw) {
   return false;
 }
 
-static float
-compensate_temperature(bmp390_i2c_t *hw,
-                       const uint32_t uncomp_temp) { // datasheet pg 55
+static float compensate_temperature(bmp390_i2c_t *hw, const uint32_t uncomp_temp) { // datasheet pg 55
   float pd1       = (float)uncomp_temp - hw->calib.par_t1;
   float pd2       = pd1 * hw->calib.par_t2;
   hw->calib.t_lin = pd2 + (pd1 * pd1) * hw->calib.par_t3;
   return (float)hw->calib.t_lin;
 }
 
-static float
-compensate_pressure(bmp390_i2c_t *hw,
-                    const uint32_t uncomp_press) { // datasheet pg 56
-  float pd1, pd2, pd3, pd4, po1, po2, comp_press;
+static float compensate_pressure(bmp390_i2c_t *hw, const uint32_t uncomp_press) { // datasheet pg 56
+  float pd1, pd2, pd3, pd4, po1, po2, prs;
   const float up = (float)uncomp_press;
-  pd1            = hw->calib.par_p6 * hw->calib.t_lin;
-  pd2            = hw->calib.par_p7 * (hw->calib.t_lin * hw->calib.t_lin);
-  pd3 =
-      hw->calib.par_p8 * (hw->calib.t_lin * hw->calib.t_lin * hw->calib.t_lin);
-  po1 = hw->calib.par_p5 + pd1 + pd2 + pd3;
 
+  pd1 = hw->calib.par_p6 * hw->calib.t_lin;
+  pd2 = hw->calib.par_p7 * (hw->calib.t_lin * hw->calib.t_lin);
+  pd3 = hw->calib.par_p8 * (hw->calib.t_lin * hw->calib.t_lin * hw->calib.t_lin);
+  po1 = hw->calib.par_p5 + pd1 + pd2 + pd3;
   pd1 = hw->calib.par_p2 * hw->calib.t_lin;
   pd2 = hw->calib.par_p3 * (hw->calib.t_lin * hw->calib.t_lin);
-  pd3 =
-      hw->calib.par_p4 * (hw->calib.t_lin * hw->calib.t_lin * hw->calib.t_lin);
-  po2        = up * (hw->calib.par_p1 + pd1 + pd2 + pd3);
+  pd3 = hw->calib.par_p4 * (hw->calib.t_lin * hw->calib.t_lin * hw->calib.t_lin);
+  po2 = up * (hw->calib.par_p1 + pd1 + pd2 + pd3);
+  pd1 = up * up;
+  pd2 = hw->calib.par_p9 + hw->calib.par_p10 * hw->calib.t_lin;
+  pd3 = pd1 * pd2;
+  pd4 = pd3 + up * up * up * hw->calib.par_p11;
+  prs = po1 + po2 + pd4;
 
-  pd1        = up * up;
-  pd2        = hw->calib.par_p9 + hw->calib.par_p10 * hw->calib.t_lin;
-  pd3        = pd1 * pd2;
-  pd4        = pd3 + up * up * up * hw->calib.par_p11;
-  comp_press = po1 + po2 + pd4;
-
-  return comp_press;
+  return prs;
 }
 
 // odr = ODR_50_HZ,  iir = IIR_FILTER_COEFF_3
-bmp390_i2c_t *bmp390_i2c_init(uint32_t port, uint8_t addr, uint8_t odr,
-                              uint8_t iir) {
+bmp390_i2c_t *bmp390_i2c_init(uint32_t port, uint8_t addr, uint8_t odr, uint8_t iir) {
   bool ok;
   uint8_t id;
   uint32_t ret;
-  bmp390_i2c_t *bmp390 = (bmp390_i2c_t *)calloc(1, sizeof(bmp390_i2c_t));
-  bmp390->i2c          = (port == 0) ? i2c0 : i2c1;
-  bmp390->addr         = addr;
+  bmp390_i2c_t *bmp390 = NULL;
+
+  bmp390       = (bmp390_i2c_t *)calloc(1, sizeof(bmp390_i2c_t));
+  bmp390->i2c  = (port == 0) ? i2c0 : i2c1;
+  bmp390->addr = addr;
 
   ret = gci_i2c_read(bmp390->i2c, bmp390->addr, REG_WHO_AM_I, &id, 1);
 
@@ -238,8 +230,8 @@ const bmp390_t bmp390_read(bmp390_i2c_t *hw) {
   ok = gci_i2c_read(hw->i2c, hw->addr, REG_DATA, hw->buffer, LEN_P_T_DATA);
   if (ok < 0) return ret;
 
-  uint32_t press  = to_24b(hw->buffer);
-  uint32_t temp   = to_24b(&hw->buffer[3]);
+  uint32_t press = to_24b(hw->buffer);
+  uint32_t temp  = to_24b(&hw->buffer[3]);
 
   ret.temperature = compensate_temperature(hw, temp); // do temp 1st!!!
   ret.pressure    = compensate_pressure(hw, press);
