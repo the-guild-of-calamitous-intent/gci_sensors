@@ -1,6 +1,44 @@
 
 #include "lsm6dsox.h"
-#include <picolibc.h>
+#include <string.h> // memcpy
+
+static constexpr uint8_t WHO_AM_I = 0x6C; // 01101100
+
+static constexpr uint8_t REG_FIFO_CTRL4 = 0x0A;
+static constexpr uint8_t REG_INT1_CTRL  = 0x0D;
+static constexpr uint8_t REG_INT2_CTRL  = 0x0E;
+static constexpr uint8_t REG_WHO_AM_I   = 0x0F;
+static constexpr uint8_t REG_CTRL1_XL   = 0x10; // Accel settings
+static constexpr uint8_t REG_CTRL2_G    = 0x11; // Gyro settings hz and dps
+static constexpr uint8_t REG_CTRL3_C    = 0x12; // interrupt stuff
+static constexpr uint8_t REG_CTRL4_C    = 0x13;
+static constexpr uint8_t REG_CTRL5_C    = 0x14;
+static constexpr uint8_t REG_CTRL6_C    = 0x15; // Accel perf mode and Gyro LPF
+static constexpr uint8_t REG_CTRL7_G    = 0x16; // Gyro filtering
+static constexpr uint8_t REG_CTRL8_XL   = 0x17; // Accel filtering
+static constexpr uint8_t REG_CTRL9_XL   = 0x18; // Accel filtering
+static constexpr uint8_t REG_CTRL10_C   = 0x19; // tiimestamp
+
+static constexpr uint8_t REG_STATUS = 0x1E;
+
+static constexpr uint8_t REG_OUT_TEMP_L = 0x20; // termperature
+static constexpr uint8_t REG_OUTX_L_G   = 0x22; // gyro
+static constexpr uint8_t REG_OUTX_L_A   = 0x28; // accel
+static constexpr uint8_t REG_TIMESTAMP0 = 0x40; // 4B timestamp
+
+static constexpr uint8_t IF_INC       = 0x04;
+static constexpr uint8_t XL_FS_MODE   = 0x02; // new mode, default 0
+static constexpr uint8_t TIMESTAMP_EN = 0x20;
+static constexpr uint8_t LPF2_XL_EN   = 0x02;  // output from LPF2 second
+                                               // filtering stage selected
+                                               // (not default)
+static constexpr uint8_t INT_DRDY_XL   = 0x01; // accel data ready INT pin
+static constexpr uint8_t INT_DRDY_G    = 0x02; // gyro data ready INT pin
+static constexpr uint8_t INT_DRDY_TEMP = 0x04; // temperature data ready INT pin
+// static constexpr uint8_t H_LACTIVE    = 0x20; // 0-high, 1-low - don't set this
+
+static constexpr float LSM6DSOX_TIMESTEP_RES = 25e-6f;
+static constexpr float TEMP_SCALE            = 1.0f / 256.0f;
 
 lsm6dsox_i2c_t *lsm6dsox_i2c_init(uint8_t port, uint8_t addr, uint8_t accel_range, uint8_t gyro_range, uint8_t odr) {
   uint8_t id;

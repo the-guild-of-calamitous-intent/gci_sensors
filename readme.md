@@ -1,9 +1,21 @@
 # GCI Sensors
 
 > Another re-write of my code base, but this time from
-> C++ to C
+> C++ to C23. I am using C23 because it brings in some
+> nice things like `constexpr`
 
-## Generic Sensor Functions
+## Sensors
+
+- Accel/Gyro
+  - LSM6DSOX
+- Magnetometer
+  - LIS3MDL
+- GPS
+  - PA1010D
+- Pressure/Temperature
+  - BMP390
+
+All sensors basically have these funtions available to them:
 
 ```c
 sensor_i2c_t* sensor_i2c_init(sensor_i2c_t*, uint32_t address, ...)

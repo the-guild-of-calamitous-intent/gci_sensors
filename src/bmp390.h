@@ -27,19 +27,16 @@ Ultr Hi  | x16 | x2 | 27  |
 */
 #pragma once
 
-// #if defined(__USE_SENSOR_BMP390__)
-
-// #include "sensor.hpp"
 #include <picolibc.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h> // memcpy
 
 #if defined __cplusplus
 extern "C" {
 #endif
 
-// namespace BMP390 {
+constexpr uint8_t BMP390_ADDRESS       = 0x77;
+constexpr uint8_t BMP390_ADDRESS_ALT   = 0x76;
 
 constexpr uint8_t OVERSAMPLING_1X      = 0x00;
 constexpr uint8_t OVERSAMPLING_2X      = 0x01;
@@ -59,33 +56,13 @@ constexpr uint8_t IIR_FILTER_COEFF_63  = 0x0C; // 110 0
 constexpr uint8_t IIR_FILTER_COEFF_127 = 0x0E; // 111 0
 
 // datasheet Table 45, p 38 oversample hz
-constexpr uint8_t ODR_200_HZ     = 0x00;
-constexpr uint8_t ODR_100_HZ     = 0x01;
-constexpr uint8_t ODR_50_HZ      = 0x02;
-constexpr uint8_t ODR_25_HZ      = 0x03;
-constexpr uint8_t ODR_12_5_HZ    = 0x04;
+constexpr uint8_t ODR_200_HZ   = 0x00;
+constexpr uint8_t ODR_100_HZ   = 0x01;
+constexpr uint8_t ODR_50_HZ    = 0x02;
+constexpr uint8_t ODR_25_HZ    = 0x03;
+constexpr uint8_t ODR_12_5_HZ  = 0x04;
 
-constexpr uint8_t REG_WHO_AM_I   = 0x00;
-constexpr uint8_t REG_ERR        = 0x02;
-constexpr uint8_t REG_STATUS     = 0x03;
-constexpr uint8_t REG_DATA       = 0x04;
-constexpr uint8_t REG_INT_STATUS = 0x11;
-constexpr uint8_t REG_INT_CTRL   = 0x19;
-constexpr uint8_t REG_PWR_CTRL   = 0x1B;
-constexpr uint8_t REG_OSR        = 0x1C;
-constexpr uint8_t REG_ODR        = 0x1D;
-constexpr uint8_t REG_IIR_FILTER = 0x1F;
-constexpr uint8_t REG_TIME       = 0x0C;
-constexpr uint8_t REG_CALIB_DATA = 0x31;
-constexpr uint8_t REG_CMD        = 0x7E;
-
-constexpr uint8_t WHO_AM_I       = 0x60;
-constexpr uint8_t CMD_RDY_BIT    = 0x10;
-constexpr uint8_t PRES_READY_BIT = (1 << 5);
-constexpr uint8_t TEMP_READY_BIT = (1 << 6);
-constexpr uint8_t SOFT_RESET     = 0xB6;
-constexpr uint8_t LEN_CALIB_DATA = 21;
-constexpr uint8_t LEN_P_T_DATA   = 6;
+constexpr uint8_t LEN_P_T_DATA = 6;
 
 typedef struct {
   float par_t1;
@@ -106,9 +83,6 @@ typedef struct {
 
   float t_lin; // was int64_t??
 } bmp3_reg_calib_data;
-
-constexpr uint8_t BMP390_ADDR     = 0x77;
-constexpr uint8_t BMP390_ADDR_ALT = 0x76;
 
 // typedef struct {
 //   int32_t pressure, temperature;

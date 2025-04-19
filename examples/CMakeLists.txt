@@ -2,6 +2,7 @@ LIST(APPEND examples
     sox
     bmp
     lis3
+    gps
 )
 
 foreach(app ${examples})

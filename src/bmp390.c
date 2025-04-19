@@ -6,6 +6,28 @@
 
 #include "bmp390.h"
 #include <math.h>
+#include <string.h> // memcpy
+
+static constexpr uint8_t REG_WHO_AM_I   = 0x00;
+static constexpr uint8_t REG_ERR        = 0x02;
+static constexpr uint8_t REG_STATUS     = 0x03;
+static constexpr uint8_t REG_DATA       = 0x04;
+static constexpr uint8_t REG_INT_STATUS = 0x11;
+static constexpr uint8_t REG_INT_CTRL   = 0x19;
+static constexpr uint8_t REG_PWR_CTRL   = 0x1B;
+static constexpr uint8_t REG_OSR        = 0x1C;
+static constexpr uint8_t REG_ODR        = 0x1D;
+static constexpr uint8_t REG_IIR_FILTER = 0x1F;
+static constexpr uint8_t REG_TIME       = 0x0C;
+static constexpr uint8_t REG_CALIB_DATA = 0x31;
+static constexpr uint8_t REG_CMD        = 0x7E;
+
+static constexpr uint8_t WHO_AM_I       = 0x60;
+static constexpr uint8_t CMD_RDY_BIT    = 0x10;
+static constexpr uint8_t PRES_READY_BIT = (1 << 5);
+static constexpr uint8_t TEMP_READY_BIT = (1 << 6);
+static constexpr uint8_t SOFT_RESET     = 0xB6;
+static constexpr uint8_t LEN_CALIB_DATA = 21;
 
 static inline uint32_t to_24b(uint8_t *b) {
   return (uint32_t)b[0] | (uint32_t)b[1] << 8 | (uint32_t)b[2] << 16;

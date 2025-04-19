@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "lis3mdl.h"
 #include "lsm6dsox.h"
 #include <picolibc.h>
 

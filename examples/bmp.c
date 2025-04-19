@@ -1,11 +1,12 @@
 #include <hardware/gpio.h>
 #include <pico/binary_info.h>
 #include <pico/stdlib.h>
+#include <picolibc.h>
 #include <stdint.h>
 #include <stdio.h>
 
+#include "algorithms.h"
 #include "bmp390.h"
-#include <picolibc.h>
 
 constexpr pin_t i2c_scl = 1;
 constexpr pin_t i2c_sda = 0;
@@ -24,7 +25,7 @@ int main() {
 
   bmp390_i2c_t *pt = NULL;
   while (true) {
-    pt = bmp390_i2c_init(0, BMP390_ADDR, ODR_50_HZ, IIR_FILTER_COEFF_3);
+    pt = bmp390_i2c_init(0, BMP390_ADDRESS, ODR_50_HZ, IIR_FILTER_COEFF_3);
     if (pt != NULL) break;
     printf("bmp390 error\n");
     sleep_ms(1000);
@@ -34,9 +35,12 @@ int main() {
     bmp390_t i = bmp390_read(pt);
     if (i.ok == false) continue;
 
+    float alt = pressure_altitude(i.pressure);
+
     // printf("-----------------------------\n");
-    printf("Press: %8.1f Pa  Temp: %5.2f C\n",
+    printf("Press: %8.1f Pa  Temp: %5.2f C  Altitude: %.3f m\n",
            i.pressure,
-           i.temperature);
+           i.temperature,
+           alt);
   }
 }

@@ -57,6 +57,8 @@ add_library(${PROJECT_NAME}
   src/bmp390.c
   src/lsm6dsox.c
   src/lis3mdl.c
+  src/pa1010d.c
+  src/algorithms.c
 )
 target_include_directories(${PROJECT_NAME} PUBLIC src extlib/gci_pico/src)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${pico_libs} pico_c)
