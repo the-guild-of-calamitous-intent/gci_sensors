@@ -3,11 +3,7 @@
 //  Copyright (c) 2022 Kevin Walchko
 //  see LICENSE for full details
 ////////////////////////////////////////////////
-/*
-
-https://www.mide.com/air-pressure-at-altitude-calculator
-
-*/
+// https://www.mide.com/air-pressure-at-altitude-calculator
 
 /*
 

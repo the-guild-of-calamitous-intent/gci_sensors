@@ -20,8 +20,17 @@ static constexpr uint8_t WHO_AM_I       = 0x60;
 static constexpr uint8_t CMD_RDY_BIT    = 0x10;
 static constexpr uint8_t PRES_READY_BIT = (1 << 5);
 static constexpr uint8_t TEMP_READY_BIT = (1 << 6);
+static constexpr uint8_t PRES_TEMP_READY_BIT = (1 << 5) | (1 << 6);
 static constexpr uint8_t SOFT_RESET     = 0xB6;
 static constexpr uint8_t LEN_CALIB_DATA = 21;
+
+static constexpr uint8_t MODE_NORMAL = (0x03 << 4); // continous sampling
+static constexpr uint8_t PRESS_EN    = 0x01;
+static constexpr uint8_t TEMP_EN     = 0x02;
+static constexpr uint8_t DRDY_EN      = (1 << 6);
+static constexpr uint8_t INT_LEVEL_HI = (1 << 1); // 1 = active high
+// latch int pin and status reg ... do I need this?
+static constexpr uint8_t INT_LATCH_EN = (1 << 2);
 
 static inline uint32_t to_24b(uint8_t *b) {
   return (uint32_t)b[0] | (uint32_t)b[1] << 8 | (uint32_t)b[2] << 16;
@@ -111,19 +120,17 @@ static bool get_calib_data(bmp390_i2c_t *hw) {
 // }
 
 static bool soft_reset(bmp390_i2c_t *hw) {
-  // bool ok;
-  // bool ok;
   int32_t ok;
   uint8_t arg;
 
   // Check for command ready status
-  uint8_t cmd_rdy_status = 0;
+  // uint8_t cmd_rdy_status = 0;
   // if(!readRegister(REG_STATUS, &cmd_rdy_status)) return false;
-  ok = gci_i2c_read(hw->i2c, hw->addr, REG_STATUS, &cmd_rdy_status, 1);
+  ok = gci_i2c_read(hw->i2c, hw->addr, REG_STATUS, &arg, 1);
   if (ok < 0) return false;
 
   // Device is ready to accept new command
-  if (cmd_rdy_status & CMD_RDY_BIT) {
+  if (arg & CMD_RDY_BIT) {
     // println("cmd_rdy_status is CMD_RDY");
     // Write the soft reset command in the sensor
     // datasheet, p 39, table 47, register ALWAYS reads 0x00
@@ -134,24 +141,26 @@ static bool soft_reset(bmp390_i2c_t *hw) {
 
     sleep_ms(10); // was 2 ... too quick?
     // Read for command error status
-    uint8_t reg_err = 0;
+    arg = 0;
     // if(!readRegister(REG_ERR, &reg_err)) return false;
     // if (reg_err & REG_CMD) return false;
-    ok = gci_i2c_read(hw->i2c, hw->addr, REG_ERR, &reg_err, 1);
-    if (reg_err & REG_CMD) return false;
+    ok = gci_i2c_read(hw->i2c, hw->addr, REG_ERR, &arg, 1);
+    if ((arg & REG_CMD) || (ok < 0)) return false;
     return true;
   }
   return false;
 }
 
-static float compensate_temperature(bmp390_i2c_t *hw, const uint32_t uncomp_temp) { // datasheet pg 55
+// datasheet pg 55
+static float compensate_temperature(bmp390_i2c_t *hw, const uint32_t uncomp_temp) {
   float pd1       = (float)uncomp_temp - hw->calib.par_t1;
   float pd2       = pd1 * hw->calib.par_t2;
   hw->calib.t_lin = pd2 + (pd1 * pd1) * hw->calib.par_t3;
   return (float)hw->calib.t_lin;
 }
 
-static float compensate_pressure(bmp390_i2c_t *hw, const uint32_t uncomp_press) { // datasheet pg 56
+// datasheet pg 56
+static float compensate_pressure(bmp390_i2c_t *hw, const uint32_t uncomp_press) {
   float pd1, pd2, pd3, pd4, po1, po2, prs;
   const float up = (float)uncomp_press;
 
@@ -178,57 +187,59 @@ static float compensate_pressure(bmp390_i2c_t *hw, const uint32_t uncomp_press) 
 //   float a, b;
 // } comp_press_t;
 
-static float compensate_pressure_alt(bmp390_i2c_t *hw, const uint32_t uncomp_press) { // datasheet pg 56
-  float pd1, pd2, pd3, pd4, po1, po2, prs;
-  const float up = (float)uncomp_press;
-  comp_press_t cp;
+// static float compensate_pressure_alt(bmp390_i2c_t *hw, const uint32_t uncomp_press) { // datasheet pg 56
+//   float pd1, pd2, pd3, pd4, po1, po2, prs;
+//   const float up = (float)uncomp_press;
+//   comp_press_t cp;
 
-  // po1 - const
-  // po2 - up * const(hw->calib.par_p1 + pd1 + pd2 + pd3)
-  // pd4 - up^2 * const + up^3 * const
-  // pressure = po1 + po2 + pd
+//   // po1 - const
+//   // po2 - up * const(hw->calib.par_p1 + pd1 + pd2 + pd3)
+//   // pd4 - up^2 * const + up^3 * const
+//   // pressure = po1 + po2 + pd
 
-  pd1    = hw->calib.par_p6 * hw->calib.t_lin;
-  pd2    = hw->calib.par_p7 * (hw->calib.t_lin * hw->calib.t_lin);
-  pd3    = hw->calib.par_p8 * (hw->calib.t_lin * hw->calib.t_lin * hw->calib.t_lin);
-  po1    = hw->calib.par_p5 + pd1 + pd2 + pd3; // const
-  cp.po1 = po1;
+//   pd1    = hw->calib.par_p6 * hw->calib.t_lin;
+//   pd2    = hw->calib.par_p7 * (hw->calib.t_lin * hw->calib.t_lin);
+//   pd3    = hw->calib.par_p8 * (hw->calib.t_lin * hw->calib.t_lin * hw->calib.t_lin);
+//   po1    = hw->calib.par_p5 + pd1 + pd2 + pd3; // const
+//   cp.po1 = po1;
 
-  pd1         = hw->calib.par_p2 * hw->calib.t_lin;
-  pd2         = hw->calib.par_p3 * (hw->calib.t_lin * hw->calib.t_lin);
-  pd3         = hw->calib.par_p4 * (hw->calib.t_lin * hw->calib.t_lin * hw->calib.t_lin);
-  po2         = up * (hw->calib.par_p1 + pd1 + pd2 + pd3); // pd1, pd2, pd3
-  cp.po2const = hw->calib.par_p1 + pd1 + pd2 + pd3;
+//   pd1         = hw->calib.par_p2 * hw->calib.t_lin;
+//   pd2         = hw->calib.par_p3 * (hw->calib.t_lin * hw->calib.t_lin);
+//   pd3         = hw->calib.par_p4 * (hw->calib.t_lin * hw->calib.t_lin * hw->calib.t_lin);
+//   po2         = up * (hw->calib.par_p1 + pd1 + pd2 + pd3); // pd1, pd2, pd3
+//   cp.po2const = hw->calib.par_p1 + pd1 + pd2 + pd3;
 
-  pd1  = up * up; //
-  pd2  = hw->calib.par_p9 + hw->calib.par_p10 * hw->calib.t_lin;
-  pd3  = pd1 * pd2;
-  pd4  = pd3 + up * up * up * hw->calib.par_p11; //
-  cp.a = pd3;
-  cp.b = hw->calib.par_p11;
+//   pd1  = up * up; //
+//   pd2  = hw->calib.par_p9 + hw->calib.par_p10 * hw->calib.t_lin;
+//   pd3  = pd1 * pd2;
+//   pd4  = pd3 + up * up * up * hw->calib.par_p11; //
+//   cp.a = pd3;
+//   cp.b = hw->calib.par_p11;
 
-  prs = po1 + po2 + pd4;
+//   prs = po1 + po2 + pd4;
 
-  return prs;
-}
+//   return prs;
+// }
 
 // odr = ODR_50_HZ,  iir = IIR_FILTER_COEFF_3
 bmp390_i2c_t *bmp390_i2c_init(uint32_t port, uint8_t addr, uint8_t odr, uint8_t iir) {
-  bool ok;
+  // bool ok;
   uint8_t id;
   uint32_t ret;
-  bmp390_i2c_t *bmp390 = NULL;
+  uint8_t arg;
+  bmp390_i2c_t *hw = NULL;
 
-  bmp390       = (bmp390_i2c_t *)calloc(1, sizeof(bmp390_i2c_t));
-  bmp390->i2c  = (port == 0) ? i2c0 : i2c1;
-  bmp390->addr = addr;
+  hw = (bmp390_i2c_t *)calloc(1, sizeof(bmp390_i2c_t));
+  if (hw == NULL) return NULL;
+  hw->i2c  = (port == 0) ? i2c0 : i2c1;
+  hw->addr = addr;
 
-  ret = gci_i2c_read(bmp390->i2c, bmp390->addr, REG_WHO_AM_I, &id, 1);
+  ret = gci_i2c_read(hw->i2c, hw->addr, REG_WHO_AM_I, &id, 1);
 
   if (!(id == WHO_AM_I) || (ret < 0)) return NULL; // ERROR_WHOAMI;
-  if (!soft_reset(bmp390)) return NULL;            // ERROR_RESET;
-  if (!get_calib_data(bmp390)) return NULL;        // ERROR_CAL_DATA;
-  if (!setODR(bmp390, odr)) return NULL;           // ERROR_ODR;
+  if (soft_reset(hw) == false) return NULL;        // ERROR_RESET;
+  if (get_calib_data(hw) == false) return NULL;    // ERROR_CAL_DATA;
+  if (setODR(hw, odr) == false) return NULL;       // ERROR_ODR;
 
   /*
   IIR Filter
@@ -248,43 +259,45 @@ bmp390_i2c_t *bmp390_i2c_init(uint32_t port, uint8_t addr, uint8_t odr, uint8_t 
   Highest Res x32 0.085
   */
   // if (!writeRegister(REG_IIR_FILTER, iir)) return ERROR_IIR_FILTER;
-  ret = gci_i2c_write(bmp390->i2c, bmp390->addr, REG_IIR_FILTER, &iir, 1);
+  ret = gci_i2c_write(hw->i2c, hw->addr, REG_IIR_FILTER, &iir, 1);
   if (ret < 0) return NULL; // ERROR_IIR_FILTER;
 
   // Enable interrupt pin
   // int_od: 0 = push-pull
   // int_latch: 0 = disable
   // 1 = enable pressure/temperature interrupt in INT_STATUS reg
-  uint8_t DRDY_EN      = (1 << 6);
-  uint8_t INT_LEVEL_HI = (1 << 1); // 1 = active high
-  // latch int pin and status reg ... do I need this?
-  uint8_t INT_LATCH_EN = (1 << 2);
-  uint8_t arg          = (DRDY_EN | INT_LEVEL_HI | INT_LATCH_EN);
+  // uint8_t DRDY_EN      = (1 << 6);
+  // uint8_t INT_LEVEL_HI = (1 << 1); // 1 = active high
+  // // latch int pin and status reg ... do I need this?
+  // uint8_t INT_LATCH_EN = (1 << 2);
   // ok = writeRegister(REG_INT_CTRL, DRDY_EN | INT_LEVEL_HI | INT_LATCH_EN);
-  ret = gci_i2c_write(bmp390->i2c, bmp390->addr, REG_INT_CTRL, &arg, 1);
+  arg          = (DRDY_EN | INT_LEVEL_HI | INT_LATCH_EN);
+  ret = gci_i2c_write(hw->i2c, hw->addr, REG_INT_CTRL, &arg, 1);
   if (ret < 0) return NULL; // ERROR_INT_PIN;
 
-  uint8_t MODE_NORMAL = (0x03 << 4); // continous sampling
-  uint8_t PRESS_EN    = 0x01;
-  uint8_t TEMP_EN     = 0x02;
-  arg                 = MODE_NORMAL | TEMP_EN | PRESS_EN;
+  // uint8_t MODE_NORMAL = (0x03 << 4); // continous sampling
+  // uint8_t PRESS_EN    = 0x01;
+  // uint8_t TEMP_EN     = 0x02;
   // ok = writeRegister(REG_PWR_CTRL, MODE_NORMAL | TEMP_EN | PRESS_EN);
-  ret = gci_i2c_write(bmp390->i2c, bmp390->addr, REG_PWR_CTRL, &arg, 1);
+  arg                 = MODE_NORMAL | TEMP_EN | PRESS_EN;
+  ret = gci_i2c_write(hw->i2c, hw->addr, REG_PWR_CTRL, &arg, 1);
   if (ret < 0) return NULL; // ERROR_PWR_MODE;
 
-  // return NO_ERROR;
-  return bmp390;
+  return hw;
 }
 
 const bmp390_t bmp390_read(bmp390_i2c_t *hw) {
   bmp390_t ret = {0.0f, 0.0f, false};
+  // printf("start\n");
 
   if (!bmp390_ready(hw)) return ret;
+  // printf("ready\n");
 
   // bool ok = readRegisters(REG_DATA, LEN_P_T_DATA, buffer);
   int32_t ok;
   ok = gci_i2c_read(hw->i2c, hw->addr, REG_DATA, hw->buffer, LEN_P_T_DATA);
   if (ok < 0) return ret;
+  // printf("good read\n");
 
   uint32_t press = to_24b(hw->buffer);
   uint32_t temp  = to_24b(&hw->buffer[3]);
@@ -302,7 +315,7 @@ const bmp390_t bmp390_read(bmp390_i2c_t *hw) {
 }
 
 // inline const bmp390_t read() { return read_raw(); }
-bool bmp390_ready(bmp390_i2c_t *hw) {
+int32_t bmp390_available(bmp390_i2c_t *hw) {
   // constexpr uint8_t DATA_READY_BIT = BITS::b3;
   // if (((readRegister(REG_INT_STATUS) & DATA_READY_BIT) == 0)) return false;
   // return true;
@@ -310,11 +323,29 @@ bool bmp390_ready(bmp390_i2c_t *hw) {
   uint8_t reg;
   // if (!readRegister(REG_STATUS, &reg)) return false;
   int32_t ok = gci_i2c_read(hw->i2c, hw->addr, REG_STATUS, &reg, 1);
-  if (ok < 0) return false;
+  if (ok < 0) return ok;
   // return (PRES_READY_BIT & reg) && (TEMP_READY_BIT & reg);
-  return ((PRES_READY_BIT | TEMP_READY_BIT) & reg) > 0;
+  return reg;
   // return true;
 }
+
+bool bmp390_ready(bmp390_i2c_t *hw) {
+  return (bmp390_available(hw) < PRES_TEMP_READY_BIT) ? false : true;
+}
+
+
+// bool bmp390_ready(bmp390_i2c_t *hw){
+//   // constexpr uint8_t DATA_READY_BIT = BITS::b3;
+//   // if (((readRegister(REG_INT_STATUS) & DATA_READY_BIT) == 0)) return false;
+//   // return true;
+
+//   uint8_t reg;
+//   // if (!readRegister(REG_STATUS, &reg)) return false;
+//   int32_t ok = gci_i2c_read(hw->i2c, hw->addr, REG_STATUS, &reg, 1);
+//   // return (PRES_READY_BIT & reg) && (TEMP_READY_BIT & reg);
+//   return ((PRES_READY_BIT | TEMP_READY_BIT) & reg) > 0;
+//   // return true;
+// }
 
 // inline bool reset() { return soft_reset(); }
 

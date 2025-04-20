@@ -21,8 +21,6 @@ int main() {
   printf(">> i2c SDA: %u SCL: %u\n", i2c_sda, i2c_scl);
   bi_decl(bi_2pins_with_func(i2c_sda, i2c_scl, GPIO_FUNC_I2C)); // compile info
 
-  printf("/// Accel/Gyros START ///\n");
-
   bmp390_i2c_t *pt = NULL;
   while (true) {
     pt = bmp390_i2c_init(0, BMP390_ADDRESS, ODR_50_HZ, IIR_FILTER_COEFF_3);
@@ -31,9 +29,16 @@ int main() {
     sleep_ms(1000);
   }
 
+  printf("/// PRESSURE/TEMPERATURE START ///\n");
+
   while (true) {
+    sleep_ms(500);
+
     bmp390_t i = bmp390_read(pt);
-    if (i.ok == false) continue;
+    if (i.ok == false) {
+      printf("*** Bad reading ***\n");
+      continue;
+    }
 
     float alt = pressure_altitude(i.pressure);
 

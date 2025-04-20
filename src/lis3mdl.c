@@ -193,10 +193,9 @@ const lis3mdl_t lis3mdl_read_cal(lis3mdl_i2c_t *hw) {
   float *sm = hw->sm;
 
   lis3mdl_t ret;
-  ret.x = sm[0] * m.x + sm[1] * m.y + sm[2] * m.z - sm[3];
-  ret.y = sm[4] * m.x + sm[5] * m.y + sm[6] * m.z - sm[7];
-  ret.z = sm[8] * m.x + sm[9] * m.y + sm[10] * m.z - sm[11];
-  // ret.temperature = m.temperature;
+  ret.x  = sm[0] * m.x + sm[1] * m.y + sm[2] * m.z - sm[3];
+  ret.y  = sm[4] * m.x + sm[5] * m.y + sm[6] * m.z - sm[7];
+  ret.z  = sm[8] * m.x + sm[9] * m.y + sm[10] * m.z - sm[11];
   ret.ok = true;
 
   return ret;

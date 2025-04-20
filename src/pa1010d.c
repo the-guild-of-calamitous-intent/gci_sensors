@@ -37,9 +37,9 @@ int32_t pa1010d_write(pa1010d_i2c_t *hw, const uint8_t *command, size_t cmd_size
 // Get message from GPS and return the message string
 // with '\0' appended to end
 int32_t pa1010d_read(pa1010d_i2c_t *hw, char buff[], const size_t buff_size) {
-  size_t i = 0;
-  size_t j = 0;
-  char c = 0;
+  size_t i   = 0;
+  size_t j   = 0;
+  char c     = 0;
   int32_t ok = 0;
 
   ok = i2c_read_blocking(hw->i2c, hw->addr, hw->buffer, MAX_NEMA_SIZE, false);
