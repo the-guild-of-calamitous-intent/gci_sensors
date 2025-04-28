@@ -10,10 +10,28 @@
 
 constexpr pin_t i2c_scl = 1;
 constexpr pin_t i2c_sda = 0;
+constexpr float M_PIf = 3.14159265358979323846f;
+
+typedef union vector2_u {
+  float v[2];
+  struct {
+     float x, y;
+  };
+} vector2_t;
+
+typedef union vector3_u {
+  float v[3];
+  struct {
+     float x, y, z;
+  };
+} vector3_t;
 
 int main() {
   stdio_init_all();
   wait_for_usb();
+
+  vector3_t v = {1,2,3};
+  v.v[0] = 4.0f;
 
   int32_t speed = gci_i2c0_bus_init(I2C_400KHZ, i2c_sda, i2c_scl);
 
