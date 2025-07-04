@@ -24,7 +24,7 @@ screen <serialport> # ctrl-a ctrl-d to exit
   - LIS3MDL
   - HMC5883L
 - GPS
-  - PA1010D
+  - PA1010D (I2C only)
 - Pressure/Temperature
   - BMP390
   - LPS22
@@ -62,7 +62,7 @@ int32_t sensor_write(sensor_io_t* hw, uint8_t reg, uint8_t* buffer, uint8_t leng
   - [ ] lsm6dsox
   - [ ] pa1010d
   - [ ] hmc5883l
-- [ ] Remove external libs to access rpi ports
+- [x] Remove external libs to access rpi ports
 - [ ] Add linux support
 
 # MIT License
