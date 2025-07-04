@@ -2,27 +2,42 @@
 
 > Another re-write of my code base, but this time from
 > C++ to C23. I am using C23 because it brings in some
-> nice things like `constexpr`
+> nice things like `constexpr` [1]
+
+[1]: https://en.cppreference.com/w/c/language/constexpr.html
+
+## Running
+
+- [Pi Pico Pinout](https://pico.pinout.xyz/)
+- [Pico Examples](https://github.com/raspberrypi/pico-examples)
+
+```
+flash-pico <filename>.uf2
+screen <serialport> # ctrl-a ctrl-d to exit
+```
 
 ## Sensors
 
 - Accel/Gyro
-  - LSM6DSOX
+  - LSM6DSOX or LSM6DSO (no ML core)
 - Magnetometer
   - LIS3MDL
+  - HMC5883L
 - GPS
   - PA1010D
 - Pressure/Temperature
   - BMP390
+  - LPS22
 
-All sensors basically have these funtions available to them:
+All sensors have a simple interface:
 
 ```c
-sensor_i2c_t* sensor_i2c_init(sensor_i2c_t*, uint32_t address, ...)
-sensor_t sensor_i2c_read(sensor_i2c_t*)
-bool sensor_reboot(sensor_i2c_t*)
-bool sensor_ready(sensor_i2c_t*)
-int32_t sensor_available(sensor_i2c_t*)
+// return: NULL - error
+//         senosr_io_t - success
+sensor_io_t* sensor_bus_init(uint8_t port, uint8_t address, ...);
+sensor_t sensor_read(sensor_io_t* hw);
+int32_t sensor_write(sensor_io_t* hw, uint8_t reg, uint8_t* buffer, uint8_t length);
+// others as needed ...
 ```
 
 ## Units
@@ -38,6 +53,17 @@ int32_t sensor_available(sensor_i2c_t*)
 | Lat/Lon     | decimal degrees | deg
 | Rate        | hertz           | Hz
 | Time        | seconds         | sec
+
+## ToDo
+
+- [ ] Make I2C or SPI interface for all sensors
+  - [x] bmp390
+  - [ ] lps22
+  - [ ] lsm6dsox
+  - [ ] pa1010d
+  - [ ] hmc5883l
+- [ ] Remove external libs to access rpi ports
+- [ ] Add linux support
 
 # MIT License
 

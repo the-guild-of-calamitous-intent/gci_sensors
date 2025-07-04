@@ -1,8 +1,11 @@
 LIST(APPEND examples
-    sox
+    sox_spi
+    sox_i2c
     bmp
     lis3
     gps
+    interrupt
+    lps22_spi
 )
 
 foreach(app ${examples})

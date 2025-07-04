@@ -23,7 +23,7 @@ Ultr Hi  | x16 | x2 | 27  |
 */
 #pragma once
 
-#include <picolibc.h>
+#include "gci_sensors/io.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -93,7 +93,7 @@ typedef struct {
 
 typedef struct {
   float pressure, temperature;
-  bool ok;
+  // bool ok;
 } bmp390_t;
 
 // enum bmp_error : uint8_t {
@@ -107,17 +107,30 @@ typedef struct {
 //   ERROR_PWR_MODE
 // };
 
+// typedef struct {
+//   i2c_inst_t *i2c;
+//   uint8_t addr;
+//   bmp3_reg_calib_data calib;
+//   uint8_t buffer[LEN_P_T_DATA];
+// } bmp390_i2c_t;
+
 typedef struct {
-  i2c_inst_t *i2c;
-  uint8_t addr;
+  comm_interface_t *comm;
+  // uint8_t addr;
   bmp3_reg_calib_data calib;
   uint8_t buffer[LEN_P_T_DATA];
-} bmp390_i2c_t;
+  // bool calibrated;
+  // bool use_imu_timestamp; // whose timestamp to use
+  bool ok;
+} bmp390_io_t;
 
-bmp390_i2c_t *bmp390_i2c_init(uint32_t port, uint8_t addr, uint8_t odr,
-                              uint8_t iir);
-const bmp390_t bmp390_read(bmp390_i2c_t *hw);
-bool bmp390_ready(bmp390_i2c_t *hw);
+bmp390_io_t *bmp390_i2c_init(uint8_t port, uint8_t addr, uint8_t odr,
+                             uint8_t iir);
+bmp390_io_t *bmp390_spi_init(uint8_t port, uint8_t cs, uint8_t odr,
+                             uint8_t iir);
+
+const bmp390_t bmp390_read(bmp390_io_t *hw);
+bool bmp390_ready(bmp390_io_t *hw);
 
 #if defined __cplusplus
 }

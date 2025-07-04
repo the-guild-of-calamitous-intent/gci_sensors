@@ -5,7 +5,8 @@
 ////////////////////////////////////////////////
 #pragma once
 
-#include <picolibc.h>
+#include "gci_sensors/typedefs.h"
+#include "io.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -38,6 +39,56 @@ constexpr uint8_t GYRO_RANGE_250_DPS  = (0x00 << 1);
 constexpr uint8_t GYRO_RANGE_500_DPS  = (0x02 << 1);
 constexpr uint8_t GYRO_RANGE_1000_DPS = (0x04 << 1);
 constexpr uint8_t GYRO_RANGE_2000_DPS = (0x06 << 1);
+constexpr size_t LSM6DSOX_BUFFER_SIZE = 14;
+
+typedef struct {
+  svec_t a, g;
+  float temperature;
+  // uint64_t timestamp_us;
+  // bool ok;
+} lsm6dsox_t;
+
+// typedef lsm6dsox_t lsm6dso_t;
+
+typedef union {
+  struct regs_t {
+    int16_t temperature; // 2b, -40C to 80C
+    svec_raw_t g;         // 2*3 = 6b
+    svec_raw_t a;         // 2*3 = 6b
+  } regs;                // 14b
+  // uint32_t timestamp;
+  uint8_t b[LSM6DSOX_BUFFER_SIZE];
+} block_t;
+
+typedef struct {
+  comm_interface_t *comm;
+  // uint8_t addr;
+  float g_scale;  // int -> float
+  float a_scale;  // int -> float
+  float acal[12]; // accel scale/bias
+  float gcal[12]; // gyro scale/bias
+  block_t block;
+  bool calibrated;
+  bool ok;
+  // bool use_imu_timestamp; // whose timestamp to use
+} lsm6dsox_io_t;
+
+lsm6dsox_io_t *lsm6dsox_i2c_init(uint8_t port, uint8_t addr,
+                                 uint8_t accel_range, uint8_t gyro_range,
+                                 uint8_t odr);
+
+bool lsm6dsox_reboot(lsm6dsox_io_t *hw);
+lsm6dsox_t lsm6dsox_read(lsm6dsox_io_t *hw);
+bool lsm6dsox_ready(lsm6dsox_io_t *hw);
+int32_t lsm6dsox_available(lsm6dsox_io_t *hw);
+
+lsm6dsox_io_t *lsm6dsox_spi_init(uint8_t port, uint8_t cs, uint8_t accel_range,
+                                 uint8_t gyro_range, uint8_t odr);
+
+#if defined __cplusplus
+}
+#endif
+
 
 // Betaflight values
 // Accel:
@@ -113,47 +164,38 @@ constexpr uint8_t GYRO_RANGE_2000_DPS = (0x06 << 1);
 // };
 
 // constexpr int MAX_CHECK = 10;
-constexpr size_t LSM6DSOX_BUFFER_SIZE = 14;
 
-typedef struct {
-  vec_t a, g;
-  float temperature;
-  uint64_t timestamp_us;
-  bool ok;
-} lsm6dsox_t;
+// typedef struct {
+//   i2c_inst_t *i2c;
+//   uint8_t addr;
+//   float g_scale;  // int -> float
+//   float a_scale;  // int -> float
+//   float acal[12]; // accel scale/bias
+//   float gcal[12]; // gyro scale/bias
+//   block_t block;
+// } lsm6dsox_i2c_t;
 
-typedef union {
-  struct regs_t {
-    int16_t temperature; // 2b, -40C to 80C
-    vec_raw_t g;         // 2*3 = 6b
-    vec_raw_t a;         // 2*3 = 6b
-  } regs;                // 14b
-  uint32_t timestamp;
-  uint8_t b[LSM6DSOX_BUFFER_SIZE];
-} block_t;
-
-typedef struct {
-  i2c_inst_t *i2c;
-  uint8_t addr;
-  float g_scale;  // int -> float
-  float a_scale;  // int -> float
-  float acal[12]; // accel scale/bias
-  float gcal[12]; // gyro scale/bias
-  block_t block;
-} lsm6dsox_i2c_t;
+// typedef struct {
+//   spi_inst_t *spi;
+//   pin_t miso, mosi, sck, cs;
+//   // uint8_t addr;
+//   float g_scale;  // int -> float
+//   float a_scale;  // int -> float
+//   float acal[12]; // accel scale/bias
+//   float gcal[12]; // gyro scale/bias
+//   block_t block;
+// }
 
 // ACCEL_RANGE_4_G, GYRO_RANGE_2000_DPS, RATE_104_HZ
-lsm6dsox_i2c_t *lsm6dsox_i2c_init(uint8_t port, uint8_t addr,
-                                  uint8_t accel_range, uint8_t gyro_range,
-                                  uint8_t odr);
-lsm6dsox_i2c_t *lsm6dsox_i2c_init_defaults(uint8_t port);
-bool lsm6dsox_reboot(lsm6dsox_i2c_t *hw);
-lsm6dsox_t lsm6dsox_read(lsm6dsox_i2c_t *hw);
-bool lsm6dsox_ready(lsm6dsox_i2c_t *hw);
-int32_t lsm6dsox_available(lsm6dsox_i2c_t *hw);
+// lsm6dsox_i2c_t *lsm6dsox_i2c_init(uint8_t port, uint8_t addr,
+//                                   uint8_t accel_range, uint8_t gyro_range,
+//                                   uint8_t odr);
+// lsm6dsox_i2c_t *lsm6dsox_i2c_init_defaults(uint8_t port);
+// bool lsm6dsox_reboot(lsm6dsox_i2c_t *hw);
+// lsm6dsox_t lsm6dsox_read(lsm6dsox_i2c_t *hw);
+// bool lsm6dsox_ready(lsm6dsox_i2c_t *hw);
+// int32_t lsm6dsox_available(lsm6dsox_i2c_t *hw);
 
 // sox_available_t available();
 
-#if defined __cplusplus
-}
-#endif
+// lsm6dsox_spi_t *lsm6dsox_spi_init_defaults(uint8_t port);

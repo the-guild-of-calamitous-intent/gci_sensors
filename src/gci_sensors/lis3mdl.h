@@ -5,15 +5,16 @@
 ////////////////////////////////////////////////
 #pragma once
 
-// #if defined(__USE_SENSOR_LIS3MDL__)
-
-#include <picolibc.h>
+#include "gci_sensors/io.h"
 #include <stdbool.h>
 #include <stdint.h>
 
 #if defined __cplusplus
 extern "C" {
 #endif
+
+static constexpr uint32_t MAG_BUFFER_SIZE = 6;
+// static constexpr uint32_t MAG_TEMP_BUFFER_SIZE = 8;
 
 constexpr uint8_t LIS3MDL_ADDRESS     = 0x1C;
 constexpr uint8_t LIS3MDL_ADDRESS_ALT = 0x1E;
@@ -35,29 +36,45 @@ constexpr uint8_t ODR_1000HZ          = LIS3MDL_LP;  // 0
 
 typedef struct {
   float x, y, z;
-  bool ok; // error?
+  // bool ok; // error?
 } lis3mdl_t;
 
 typedef union {
   struct {
     int16_t x, y, z, temp;
   } s;
-  uint8_t b[8]; // bytes
+  uint8_t b[MAG_BUFFER_SIZE]; // bytes
 } buff_t;
 
+// typedef struct {
+//   i2c_inst_t *i2c;
+//   uint8_t addr;
+//   buff_t buff;
+//   float sm[12];
+//   float scale;
+// } lis3mdl_i2c_t;
+
+// lis3mdl_i2c_t *lis3mdl_i2c_init(uint32_t port, uint8_t addr, uint8_t range,
+//                                 uint8_t odr);
+// bool lis3mdl_reboot(lis3mdl_i2c_t *hw);
+// const lis3mdl_t lis3mdl_read(lis3mdl_i2c_t *hw);
+// bool lis3mdl_ready(lis3mdl_i2c_t *hw);
+
 typedef struct {
-  i2c_inst_t *i2c;
-  uint8_t addr;
+  comm_interface_t *comm;
   buff_t buff;
   float sm[12];
   float scale;
-} lis3mdl_i2c_t;
+  bool ok;
+} lis3mdl_io_t;
 
-lis3mdl_i2c_t *lis3mdl_i2c_init(uint32_t port, uint8_t addr, uint8_t range,
-                                uint8_t odr);
-bool lis3mdl_reboot(lis3mdl_i2c_t *hw);
-const lis3mdl_t lis3mdl_read(lis3mdl_i2c_t *hw);
-bool lis3mdl_ready(lis3mdl_i2c_t *hw);
+lis3mdl_io_t *lis3mdl_spi_init(uint8_t port, uint8_t addr, uint8_t range,
+                               uint8_t odr);
+lis3mdl_io_t *lis3mdl_i2c_init(uint8_t port, uint8_t addr, uint8_t range,
+                               uint8_t odr);
+const lis3mdl_t lis3mdl_read(lis3mdl_io_t *hw);
+bool lis3mdl_reboot(lis3mdl_io_t *hw);
+bool lis3mdl_ready(lis3mdl_io_t *hw);
 
 #if defined __cplusplus
 }
