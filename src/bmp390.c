@@ -267,7 +267,7 @@ bmp390_io_t *bmp390_spi_init(uint8_t port, uint8_t cs, uint8_t odr, uint8_t iir)
 const bmp390_t bmp390_read(bmp390_io_t *hw) {
   comm_interface_t *comm = hw->comm;
   bmp390_t ret           = {0.0f, 0.0f};
-  hw->ok = false;
+  hw->ok                 = false;
   // printf("start\n");
 
   if (!bmp390_ready(hw)) return ret;

@@ -1,4 +1,5 @@
 #include "gci_sensors/io.h"
+#include <hardware/gpio.h>
 
 comm_interface_t *comm_interface_init(uint8_t port, uint8_t addr_cs, interface_t type) {
 
@@ -22,6 +23,11 @@ comm_interface_t *comm_interface_init(uint8_t port, uint8_t addr_cs, interface_t
     comm->read     = spi_read;
     comm->write    = spi_write;
     comm->config   = config;
+
+    // Chip select is active-low, initialise it to a driven-high state
+    gpio_init(addr_cs);
+    gpio_set_dir(addr_cs, GPIO_OUT);
+    gpio_put(addr_cs, 1);
   }
 
   return comm;

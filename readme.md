@@ -13,7 +13,7 @@
 
 ```
 flash-pico <filename>.uf2
-screen <serialport> # ctrl-a ctrl-d to exit
+screen /dev/tty.usbmodemxxxx # ctrl-a ctrl-d to exit
 ```
 
 ## Sensors
@@ -54,15 +54,31 @@ int32_t sensor_write(sensor_io_t* hw, uint8_t reg, uint8_t* buffer, uint8_t leng
 | Rate        | hertz           | Hz
 | Time        | seconds         | sec
 
+## Generic API
+
+- Naming convention
+  - `<sensor>_t` is the output
+  - `<sensor>_io_t` is the generic information to interface
+    with the sensor via I2C or SPI
+  - Functions are generally named `return_type <sensor>_<action>(args)`
+    - `<action>`s can be `init`, `read`, `write`, etc
+    - `return_type` can be `int`, `void`, `<sensor>_t`, etc
+    - `int` return is typically:
+      - `0`: success
+      - `>0`: success or baudrate or data read/written
+    - Errors are captured in each `<sensor>_io_t`
+      - `bool ok`: true-ok, false-error
+      - `int errnum`: error number
+
 ## ToDo
 
 - [ ] Make I2C or SPI interface for all sensors
-  - [x] bmp390
+  - [ ] bmp390
   - [ ] lps22
   - [ ] lsm6dsox
   - [ ] pa1010d
   - [ ] hmc5883l
-- [x] Remove external libs to access rpi ports
+- [x] Remove external libraries
 - [ ] Add linux support
 
 # MIT License

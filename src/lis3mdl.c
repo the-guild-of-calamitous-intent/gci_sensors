@@ -164,7 +164,7 @@ const lis3mdl_t lis3mdl_read(lis3mdl_io_t *hw) {
   int32_t ok;
   lis3mdl_t ret          = {0.0f, 0.0f, 0.0f};
   comm_interface_t *comm = hw->comm;
-  hw->ok = false;
+  hw->ok                 = false;
 
   // if (lis3mdl_ready(hw) == false) return ret;
 

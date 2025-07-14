@@ -39,38 +39,63 @@ constexpr uint8_t GYRO_RANGE_250_DPS  = (0x00 << 1);
 constexpr uint8_t GYRO_RANGE_500_DPS  = (0x02 << 1);
 constexpr uint8_t GYRO_RANGE_1000_DPS = (0x04 << 1);
 constexpr uint8_t GYRO_RANGE_2000_DPS = (0x06 << 1);
+
 constexpr size_t LSM6DSOX_BUFFER_SIZE = 14;
+
+// #define LSM6DSOX_INT1_CRTL 0x02 // DRDY Gyro
+// #define LSM6DSOX_INT2_CRTL 0x00 // disable INT2
+
+typedef enum {
+  LSM6DSOX_ERROR_NONE         = 0,
+  LSM6DSOX_ERROR_WHOAMI       = 1,
+  LSM6DSOX_ERROR_GYRO_RANGE   = 2,
+  LSM6DSOX_ERROR_ACCEL_RANGE  = 4,
+  LSM6DSOX_ERROR_ODR          = 8,
+  LSM6DSOX_ERROR_COMM_IF_FAIL = 16,
+  LSM6DSOX_ERROR_INIT         = 32,
+  // LSM6DSOX_ERROR_CTRL2_G          = 12,
+  // LSM6DSOX_ERROR_CTRL3_C          = 13,
+  // LSM6DSOX_ERROR_CTRL4_C          = 14,
+  // LSM6DSOX_ERROR_CTRL5_C          = 15,
+  // LSM6DSOX_ERROR_CTRL6_C          = 16,
+  // LSM6DSOX_ERROR_CTRL7_G          = 17,
+  // LSM6DSOX_ERROR_CTRL8_XL         = 18,
+  // LSM6DSOX_ERROR_CTRL9_XL         = 19,
+  // LSM6DSOX_ERROR_CTRL10_C         = 20,
+  LSM6DSOX_ERROR_READ  = 64,
+  LSM6DSOX_ERROR_WRITE = 128
+} sox6dsox_error_t;
 
 typedef struct {
   svec_t a, g;
-  float temperature;
+  float temperature; // do I use this?
   // uint64_t timestamp_us;
-  // bool ok;
 } lsm6dsox_t;
 
-// typedef lsm6dsox_t lsm6dso_t;
-
 typedef union {
-  struct regs_t {
+  // struct regs_t {
+  //   int16_t temperature; // 2b, -40C to 80C
+  //   svec_raw_t g;         // 2*3 = 6b
+  //   svec_raw_t a;         // 2*3 = 6b
+  // } regs;                // 14b
+  struct {
     int16_t temperature; // 2b, -40C to 80C
-    svec_raw_t g;         // 2*3 = 6b
-    svec_raw_t a;         // 2*3 = 6b
-  } regs;                // 14b
+    svec_raw_t g;        // 2*3 = 6b
+    svec_raw_t a;        // 2*3 = 6b
+  }; // 14b
   // uint32_t timestamp;
   uint8_t b[LSM6DSOX_BUFFER_SIZE];
 } block_t;
 
 typedef struct {
   comm_interface_t *comm;
-  // uint8_t addr;
   float g_scale;  // int -> float
   float a_scale;  // int -> float
   float acal[12]; // accel scale/bias
   float gcal[12]; // gyro scale/bias
   block_t block;
-  bool calibrated;
   bool ok;
-  // bool use_imu_timestamp; // whose timestamp to use
+  sox6dsox_error_t errnum;
 } lsm6dsox_io_t;
 
 lsm6dsox_io_t *lsm6dsox_i2c_init(uint8_t port, uint8_t addr,
@@ -79,16 +104,20 @@ lsm6dsox_io_t *lsm6dsox_i2c_init(uint8_t port, uint8_t addr,
 
 bool lsm6dsox_reboot(lsm6dsox_io_t *hw);
 lsm6dsox_t lsm6dsox_read(lsm6dsox_io_t *hw);
+lsm6dsox_t lsm6dsox_calibrate(lsm6dsox_io_t *hw, lsm6dsox_t data);
+void lsm6dsox_set_cal(lsm6dsox_io_t *hw, float a[12], float g[12]);
 bool lsm6dsox_ready(lsm6dsox_io_t *hw);
 int32_t lsm6dsox_available(lsm6dsox_io_t *hw);
 
+// lsm6dsox_io_t *lsm6dsox_spi_init_alt(uint8_t port, pin_t cs,
+//                                      uint8_t accel_range, uint8_t gyro_range,
+//                                      uint8_t odr);
 lsm6dsox_io_t *lsm6dsox_spi_init(uint8_t port, uint8_t cs, uint8_t accel_range,
                                  uint8_t gyro_range, uint8_t odr);
 
 #if defined __cplusplus
 }
 #endif
-
 
 // Betaflight values
 // Accel:

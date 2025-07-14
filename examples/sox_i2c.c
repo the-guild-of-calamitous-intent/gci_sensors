@@ -10,7 +10,6 @@
 constexpr pin_t i2c_scl = 1;
 constexpr pin_t i2c_sda = 0;
 
-
 int main() {
   stdio_init_all();
   while (!tud_cdc_connected()) {

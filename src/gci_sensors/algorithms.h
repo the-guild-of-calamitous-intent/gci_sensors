@@ -9,7 +9,10 @@
 extern "C" {
 #endif
 
-float pressure_altitude(const float p);
+#include <stdbool.h>
+#include <stdint.h>
+
+float pressure_altitude(const float pressure_pa);
 
 #if defined __cplusplus
 }

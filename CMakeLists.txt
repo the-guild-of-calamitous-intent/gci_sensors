@@ -28,10 +28,13 @@ if(PROJECT_IS_TOP_LEVEL)
   cmake_host_system_information(RESULT PROC QUERY PROCESSOR_DESCRIPTION)
 
   message(STATUS "-------------------------------------")
-  message(STATUS "  Project: ${PROJECT_NAME}")
-  message(STATUS "  Hardware: ${PICO_BOARD}")
-  message(STATUS "  C++ ${CMAKE_CXX_STANDARD}")
-  message(STATUS "  C ${CMAKE_C_STANDARD}")
+  message(STATUS " Project: ${PROJECT_NAME}")
+  message(STATUS "-------------------------------------")
+  message(STATUS " Compiler")
+  message(STATUS "  C ${CMAKE_C_STANDARD}: ${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION} (${CMAKE_C_COMPILER})")
+  message(STATUS "  CXX ${CMAKE_CXX_STANDARD}: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} (${CMAKE_CXX_COMPILER})")
+  message(STATUS " ")
+  message(STATUS " Hardware: ${PICO_BOARD} ${PICO_PLATFORM}")
   message(STATUS "-------------------------------------")
   message(STATUS " ${HOST}")
   message(STATUS " ${OSN}: ${OS_VERSION}")
@@ -40,7 +43,11 @@ if(PROJECT_IS_TOP_LEVEL)
 
   set(BUILD_EXAMPLES ON)
 else()
-  message(STATUS "-> ${PROJECT_NAME} is submodule")
+  if(PICO_PLATFORM)
+    message(STATUS "-> ${PROJECT_NAME} is submodule for ${PICO_PLATFORM}")
+  else()
+    message(STATUS "-> ${PROJECT_NAME} is submodule")
+  endif()
   set(BUILD_EXAMPLES OFF)
 endif()
 
@@ -54,16 +61,16 @@ LIST(APPEND pico_libs
 )
 
 add_library(${PROJECT_NAME}
+  src/algorithms.c
   src/bmp390.c
+  src/hmc5883.c
+  src/io-common.c
+  src/io-i2c.c
+  src/io-spi.c
+  src/lis3mdl.c
   src/lps22.c
   src/lsm6dsox.c
-  src/lis3mdl.c
   src/pa1010d.c
-  src/algorithms.c
-  src/hmc5883.c
-  src/io-spi.c
-  src/io-i2c.c
-  src/io-common.c
 )
 target_include_directories(${PROJECT_NAME} 
   PUBLIC 

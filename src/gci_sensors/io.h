@@ -71,11 +71,12 @@ int32_t gcis_i2c_bus_init(uint32_t port, uint32_t baud, pin_t pin_sda,
 
 // --- SPI Implementation ---------------------------------
 typedef enum {
-  SPI_INVALID_MISO_PIN = -1,
-  SPI_INVALID_MOSI_PIN = -2,
-  SPI_INVALID_PORT     = -3,
-  SPI_PTR_NULL         = -4,
-  SPI_UNINITIALIZED    = -99
+  SPI_INVALID_SDI_PIN = -1,
+  SPI_INVALID_SDO_PIN = -2,
+  SPI_INVALID_SCK_PIN = -3,
+  SPI_INVALID_PORT    = -4,
+  SPI_PTR_NULL        = -5,
+  SPI_UNINITIALIZED   = -99
 } spi_errors_t;
 
 typedef struct {
@@ -83,9 +84,10 @@ typedef struct {
   uint8_t cs_pin;
 } spi_config_t;
 
-uint32_t gcis_spi_bus_init(uint8_t port, uint32_t baud, pin_t miso, pin_t mosi, pin_t sck);
-uint32_t gcis_spi0_init(uint32_t baud, pin_t miso, pin_t mosi, pin_t sck);
-uint32_t gcis_spi1_init(uint32_t baud, pin_t miso, pin_t mosi, pin_t sck);
+int32_t gcis_spi_bus_init(uint8_t port, uint32_t baud, pin_t sdi, pin_t sdo,
+                          pin_t sck);
+int32_t gcis_spi0_init(uint32_t baud, pin_t sdi, pin_t sdo, pin_t sck);
+int32_t gcis_spi1_init(uint32_t baud, pin_t sdi, pin_t sdo, pin_t sck);
 void gcis_spi_init_cs(pin_t cs);
 
 // return:
