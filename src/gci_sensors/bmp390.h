@@ -92,7 +92,8 @@ typedef struct {
 // } bmp390_raw_t;
 
 typedef struct {
-  float pressure, temperature;
+  float pressure;
+  float temperature;
   // bool ok;
 } bmp390_t;
 

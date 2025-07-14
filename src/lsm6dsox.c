@@ -200,7 +200,7 @@ lsm6dsox_t lsm6dsox_calibrate(lsm6dsox_io_t *hw, lsm6dsox_t data) {
   lsm6dsox_t ret;
   hw->ok = true;
 
-  svec_t m = data.a;
+  vec3f_t m = data.a;
   // accel = A * accel_meas - bias
   ret.a.x = acal[0] * m.x + acal[1] * m.y + acal[2] * m.z - acal[3];
   ret.a.y = acal[4] * m.x + acal[5] * m.y + acal[6] * m.z - acal[7];
