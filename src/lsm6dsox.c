@@ -94,6 +94,27 @@ static lsm6dsox_io_t *lsm6dsox_init(interface_t type, uint8_t port, uint8_t addr
     return hw;
   }
 
+  // REG        | DEFAULT
+  // -----------|---------
+  // FIFO_CTRL1 | 0x00
+  // FIFO_CTRL2 | 0x00
+  // FIFO_CTRL3 | 0x00
+  // FIFO_CTRL4 | 0x00
+  // BDR_REG1   | 0x00
+  // BDR_REG2   | 0x00
+  // -----------|---------
+  // CTRL1_XL   | 0x00
+  // CTRL2_G    | 0x00
+  // CTRL3_C    | 0x04
+  // CTRL4_C    | 0x00
+  // CTRL5_C    | 0x00
+  // CTRL6_C    | 0x00
+  // CTRL7_G    | 0x00
+  // CTRL8_XL   | 0x00
+  // CTRL9_XL   | 0xD0
+  // CTRL10_C   | 0x00
+
+  #define INT1_DRDY_G 0x02 // INT1 gyro data ready
   // reg 07-0E
   uint8_t blk0[8] = {
       0x00, // FIFO 1 (default)
@@ -102,20 +123,20 @@ static lsm6dsox_io_t *lsm6dsox_init(interface_t type, uint8_t port, uint8_t addr
       0x00, // FIFO 4 (default)
       0x00, // counter bdr reg 1 (default)
       0x00, // counter bdr reg 2 (default)
-      0x02, // int1 ctr - DRDY Gyro
+      INT1_DRDY_G, // int1 ctr - DRDY Gyro
       0x00  // int2 ctr - int2 disabled
   };
   // reg 10-19
   uint8_t blk1[10] = {
       odr | accel_range, // ctrl 1 xl - ODR | XL_RANGE | XL_LPF1 (0x76)
       odr | gyro_range,  // ctrl 2 g - ODR | G_RANGE (0x7c)
-      0x54,              // ctrl 3 c - 0101,0100 BDU | PP_OD | SIM_4WIRE | IF_INC
-      0x01,              // ctrl 4 c - DISABLE_I2C | LFP1_SEL_G
+      0x04,              // ctrl 3 c - 0000,0100 CONTINOUS(0) | PP_OD(0) | SIM_4WIRE(0) | IF_INC(0x04)
+      0x02,              // ctrl 4 c - DISABLE_I2C(0) | LFP1_SEL_G (2)
       0x00,              // ctrl 5 c (default)
       0x00,              // ctrl 6 c - 0000,0000 (default) XL_HM_MODE | FTYPE_335Hz
       0x00,              // ctrl 7 g (default)
-      0x00,              // ctrl 8 xl (default)
-      0xD2,              // ctrl 9 xl - DISABLE_I3C
+      0x00,              // ctrl 8 xl (default) - can have 16G
+      0xD2,              // ctrl 9 xl - DISABLE_I3C(2)
       0x00,              // ctrl 10 c (default) TIMESTAMP_DISABLED
   };
 

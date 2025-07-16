@@ -91,7 +91,7 @@ int spi_read(void *config, uint8_t reg, uint8_t *data, size_t len) {
   spi_config_t *cfg = (spi_config_t *)config;
   gpio_put(cfg->cs_pin, SPI_ACTIVATE); // CS low
   spi_write_blocking(cfg->spi, &reg, 1);
-  sleep_ms(10);
+  // sleep_us(5);
   int ret = spi_read_blocking(cfg->spi, 0, data, len);
   gpio_put(cfg->cs_pin, SPI_DEACTIVATE); // CS high
   return ret;

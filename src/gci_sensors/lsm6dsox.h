@@ -29,7 +29,7 @@ constexpr uint8_t RATE_6660_HZ  = 0xA0;
 
 // The accelerometer data range
 constexpr uint8_t ACCEL_RANGE_2_G  = (0x00 << 2);
-constexpr uint8_t ACCEL_RANGE_16_G = (0x01 << 2);
+constexpr uint8_t ACCEL_RANGE_16_G = (0x01 << 2); // CTRL8_XL: XL_FS_MODE = 0 
 constexpr uint8_t ACCEL_RANGE_4_G  = (0x02 << 2);
 constexpr uint8_t ACCEL_RANGE_8_G  = (0x03 << 2);
 

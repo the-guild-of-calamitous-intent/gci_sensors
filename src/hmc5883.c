@@ -49,7 +49,7 @@ hmc5883_io_t *hmc5883_init(interface_t type, uint8_t port) {
   ok  = comm->write(comm->config, HMC5883L_MODE_REG, &cmd, 1);
   if (ok < 0) return NULL;
 
-  sleep_ms(100);
+  sleep_ms(1);
 
   return hw;
 }
