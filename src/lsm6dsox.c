@@ -44,9 +44,8 @@ static constexpr float TEMP_SCALE = 1.0f / 256.0f;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
 // lsm6dsox_io_t *lsm6dsox_spi_init(uint8_t port, uint8_t cs, uint8_t accel_range, uint8_t gyro_range, uint8_t odr) {
-static lsm6dsox_io_t *lsm6dsox_init(interface_t type, uint8_t port, uint8_t addr_cs, uint8_t accel_range, uint8_t gyro_range, uint8_t odr) {
+static lsm6dsox_io_t *lsm6dsox_init(interface_t type, uint8_t port, uint8_t addr_cs, lsm6dsox_xl_range_t accel_range, lsm6dsox_g_range_t gyro_range, lsm6dsox_odr_t odr) {
   int err      = 0;
   uint8_t data = 0;
 
@@ -75,20 +74,20 @@ static lsm6dsox_io_t *lsm6dsox_init(interface_t type, uint8_t port, uint8_t addr
   }
   // printf("> found imu\n");
 
-  if (accel_range == ACCEL_RANGE_2_G) hw->a_scale = 2.0f / 32768.0f;
-  else if (accel_range == ACCEL_RANGE_4_G) hw->a_scale = 4.0f / 32768.0f;
-  else if (accel_range == ACCEL_RANGE_8_G) hw->a_scale = 8.0f / 32768.0f;
-  else if (accel_range == ACCEL_RANGE_16_G) hw->a_scale = 16.0f / 32768.0f;
+  if (accel_range == LSM6DSOX_ACCEL_RANGE_2_G) hw->a_scale = 2.0f / 32768.0f;
+  else if (accel_range == LSM6DSOX_ACCEL_RANGE_4_G) hw->a_scale = 4.0f / 32768.0f;
+  else if (accel_range == LSM6DSOX_ACCEL_RANGE_8_G) hw->a_scale = 8.0f / 32768.0f;
+  else if (accel_range == LSM6DSOX_ACCEL_RANGE_16_G) hw->a_scale = 16.0f / 32768.0f;
   else {
     hw->errnum = LSM6DSOX_ERROR_ACCEL_RANGE;
     return hw;
   }
 
-  if (gyro_range == GYRO_RANGE_125_DPS) hw->g_scale = 125.0f / 32768.0f;
-  else if (gyro_range == GYRO_RANGE_250_DPS) hw->g_scale = 250.0f / 32768.0f;
-  else if (gyro_range == GYRO_RANGE_500_DPS) hw->g_scale = 500.0f / 32768.0f;
-  else if (gyro_range == GYRO_RANGE_1000_DPS) hw->g_scale = 1000.0f / 32768.0f;
-  else if (gyro_range == GYRO_RANGE_2000_DPS) hw->g_scale = 2000.0f / 32768.0f;
+  if (gyro_range == LSM6DSOX_GYRO_RANGE_125_DPS) hw->g_scale = 125.0f / 32768.0f;
+  else if (gyro_range == LSM6DSOX_GYRO_RANGE_250_DPS) hw->g_scale = 250.0f / 32768.0f;
+  else if (gyro_range == LSM6DSOX_GYRO_RANGE_500_DPS) hw->g_scale = 500.0f / 32768.0f;
+  else if (gyro_range == LSM6DSOX_GYRO_RANGE_1000_DPS) hw->g_scale = 1000.0f / 32768.0f;
+  else if (gyro_range == LSM6DSOX_GYRO_RANGE_2000_DPS) hw->g_scale = 2000.0f / 32768.0f;
   else {
     hw->errnum = LSM6DSOX_ERROR_GYRO_RANGE;
     return hw;
@@ -114,17 +113,17 @@ static lsm6dsox_io_t *lsm6dsox_init(interface_t type, uint8_t port, uint8_t addr
   // CTRL9_XL   | 0xD0
   // CTRL10_C   | 0x00
 
-  #define INT1_DRDY_G 0x02 // INT1 gyro data ready
+#define INT1_DRDY_G 0x02 // INT1 gyro data ready
   // reg 07-0E
   uint8_t blk0[8] = {
-      0x00, // FIFO 1 (default)
-      0x00, // FIFO 2 (default)
-      0x00, // FIFO 3 (default)
-      0x00, // FIFO 4 (default)
-      0x00, // counter bdr reg 1 (default)
-      0x00, // counter bdr reg 2 (default)
+      0x00,        // FIFO 1 (default)
+      0x00,        // FIFO 2 (default)
+      0x00,        // FIFO 3 (default)
+      0x00,        // FIFO 4 (default)
+      0x00,        // counter bdr reg 1 (default)
+      0x00,        // counter bdr reg 2 (default)
       INT1_DRDY_G, // int1 ctr - DRDY Gyro
-      0x00  // int2 ctr - int2 disabled
+      0x00         // int2 ctr - int2 disabled
   };
   // reg 10-19
   uint8_t blk1[10] = {
@@ -157,12 +156,12 @@ static lsm6dsox_io_t *lsm6dsox_init(interface_t type, uint8_t port, uint8_t addr
   return hw;
 }
 
-lsm6dsox_io_t *lsm6dsox_i2c_init(uint8_t port, uint8_t addr, uint8_t accel_range, uint8_t gyro_range, uint8_t odr) {
+lsm6dsox_io_t *lsm6dsox_i2c_init(uint8_t port, uint8_t addr, lsm6dsox_xl_range_t accel_range, lsm6dsox_g_range_t gyro_range, lsm6dsox_odr_t odr) {
   return lsm6dsox_init(I2C_INTERFACE, port, addr, accel_range, gyro_range, odr);
   return NULL;
 }
 
-lsm6dsox_io_t *lsm6dsox_spi_init(uint8_t port, uint8_t cs, uint8_t accel_range, uint8_t gyro_range, uint8_t odr) {
+lsm6dsox_io_t *lsm6dsox_spi_init(uint8_t port, pin_t cs, lsm6dsox_xl_range_t accel_range, lsm6dsox_g_range_t gyro_range, lsm6dsox_odr_t odr) {
   return lsm6dsox_init(SPI_INTERFACE, port, cs, accel_range, gyro_range, odr);
 }
 

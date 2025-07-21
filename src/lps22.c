@@ -69,7 +69,7 @@ References:
 #define LPS22_TEMP_OUT_H 0x2C
 #define LPS22_LPFP_RES 0x33
 
-lps22_io_t *lps22_spi_init(uint8_t port, pin_t cs, uint8_t ODR) {
+lps22_io_t *lps22_spi_init(uint8_t port, pin_t cs, lps22_odr_t ODR) {
   lps22_io_t *hw = (lps22_io_t *)calloc(1, sizeof(lps22_io_t));
   if (hw == NULL) return NULL;
 

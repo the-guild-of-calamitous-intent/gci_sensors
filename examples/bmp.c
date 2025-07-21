@@ -8,8 +8,8 @@
 #include "gci_sensors/algorithms.h"
 #include "gci_sensors/bmp390.h"
 
-constexpr pin_t i2c_scl = 1;
-constexpr pin_t i2c_sda = 0;
+#define i2c_scl 1
+#define i2c_sda 0
 
 int main() {
   stdio_init_all();
@@ -25,7 +25,7 @@ int main() {
 
   bmp390_io_t *pt = NULL;
   while (true) {
-    pt = bmp390_i2c_init(0, BMP390_ADDRESS, ODR_50_HZ, IIR_FILTER_COEFF_3);
+    pt = bmp390_i2c_init(0, BMP390_ADDRESS, BMP390_ODR_50_HZ, BMP390_IIR_COEFF_3);
     if (pt != NULL) break;
     printf("bmp390 error\n");
     sleep_ms(1000);

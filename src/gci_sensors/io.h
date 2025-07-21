@@ -88,7 +88,10 @@ int32_t gcis_spi_bus_init(uint8_t port, uint32_t baud, pin_t sdi, pin_t sdo,
                           pin_t sck);
 int32_t gcis_spi0_init(uint32_t baud, pin_t sdi, pin_t sdo, pin_t sck);
 int32_t gcis_spi1_init(uint32_t baud, pin_t sdi, pin_t sdo, pin_t sck);
-void gcis_spi_init_cs(pin_t cs);
+
+typedef enum { SPI_CS_NONE, SPI_CS_PULLUP, SPI_CS_PULLDOWN } spi_cs_t;
+
+void gcis_spi_init_cs(pin_t cs, spi_cs_t opt);
 
 // return:
 //     >0: number bytes read/written

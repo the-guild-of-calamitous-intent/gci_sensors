@@ -5,6 +5,8 @@
 // static constexpr uint32_t READ_MAG      = 6;
 // static constexpr uint32_t READ_MAG_TEMP = 8;
 
+
+
 static constexpr uint8_t REG_WHO_AM_I   = 0x0F;
 static constexpr uint8_t REG_CTRL_REG1  = 0x20;
 static constexpr uint8_t REG_CTRL_REG2  = 0x21;
@@ -48,7 +50,7 @@ bool lis3mdl_ready(lis3mdl_io_t *hw) {
 }
 
 // RANGE_4GAUSS, ODR_155HZ
-static lis3mdl_io_t *lis3mdl_init(interface_t type, uint8_t port, uint8_t addr_cs, uint8_t range, uint8_t odr) {
+static lis3mdl_io_t *lis3mdl_init(interface_t type, uint8_t port, uint8_t addr_cs, lis3mdl_range_t range, lis3mdl_odr_t odr) {
   uint8_t id = 0;
   int32_t ok;
   uint8_t cmd;
@@ -70,16 +72,16 @@ static lis3mdl_io_t *lis3mdl_init(interface_t type, uint8_t port, uint8_t addr_c
   // u (1E6) * (1E-4) => (1E2) = 100 <- this is the 100 below
   // pg8, table 3
   switch (range) {
-  case RANGE_4GAUSS:
+  case LIS3MDL_RANGE_4GAUSS:
     hw->scale = 100.0f / 6842.0f;
     break;
-  case RANGE_8GAUSS:
+  case LIS3MDL_RANGE_8GAUSS:
     hw->scale = 100.0f / 3421.0f;
     break;
-  case RANGE_12GAUSS:
+  case LIS3MDL_RANGE_12GAUSS:
     hw->scale = 100.0f / 2281.0f;
     break;
-  case RANGE_16GAUSS:
+  case LIS3MDL_RANGE_16GAUSS:
     hw->scale = 100.0f / 1711.0f;
     break;
   }
@@ -129,11 +131,11 @@ static lis3mdl_io_t *lis3mdl_init(interface_t type, uint8_t port, uint8_t addr_c
   return hw;
 }
 
-lis3mdl_io_t *lis3mdl_i2c_init(uint8_t port, uint8_t addr, uint8_t range, uint8_t odr) {
+lis3mdl_io_t *lis3mdl_i2c_init(uint8_t port, uint8_t addr, lis3mdl_range_t range, lis3mdl_odr_t odr) {
   return lis3mdl_init(I2C_INTERFACE, port, addr, range, odr);
 }
 
-lis3mdl_io_t *lis3mdl_spi_init(uint8_t port, uint8_t cs, uint8_t range, uint8_t odr) {
+lis3mdl_io_t *lis3mdl_spi_init(uint8_t port, pin_t cs, lis3mdl_range_t range, lis3mdl_odr_t odr) {
   return lis3mdl_init(SPI_INTERFACE, port, cs, range, odr);
 }
 

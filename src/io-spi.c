@@ -25,11 +25,15 @@ constexpr valid_spi_pins_t spi1_valid = {
     .sck = (1 << 10) | (1 << 14) | (1 << 26),
     .sdo = (1 << 11) | (1 << 15) | (1 << 27)};
 
-void gcis_spi_init_cs(pin_t cs) {
+void gcis_spi_init_cs(pin_t cs, spi_cs_t opt) {
   // Chip select is active-low, so we'll initialise it to a driven-high state
   gpio_init(cs);
   gpio_set_dir(cs, GPIO_OUT);
   gpio_put(cs, 1);
+
+  if (opt == SPI_CS_PULLDOWN) gpio_pull_down(cs);
+  else if (opt == SPI_CS_PULLUP) gpio_pull_up(cs);
+  else gpio_disable_pulls(cs);
 }
 
 int32_t gcis_spi_bus_init(

@@ -3,6 +3,14 @@
 #include <stdlib.h> // calloc
 #include <string.h> // memcpy
 
+
+constexpr uint8_t BMP390_OVERSAMPLING_1X      = 0x00;
+constexpr uint8_t BMP390_OVERSAMPLING_2X      = 0x01;
+constexpr uint8_t BMP390_OVERSAMPLING_4X      = 0x02;
+constexpr uint8_t BMP390_OVERSAMPLING_8X      = 0x03;
+constexpr uint8_t BMP390_OVERSAMPLING_16X     = 0x04;
+constexpr uint8_t BMP390_OVERSAMPLING_32X     = 0x05;
+
 static constexpr uint8_t REG_WHO_AM_I   = 0x00;
 static constexpr uint8_t REG_ERR        = 0x02;
 static constexpr uint8_t REG_STATUS     = 0x03;
@@ -41,7 +49,7 @@ static inline uint16_t to_16b(uint8_t msb, uint8_t lsb) {
   return ((uint16_t)msb << 8) | (uint16_t)lsb;
 }
 
-static bool setODR(bmp390_io_t *hw, uint8_t odr) {
+static bool setODR(bmp390_io_t *hw, bmp390_odr_t odr) {
   uint8_t press_os, temp_os;
   int32_t ok;
   uint8_t arg;
@@ -52,25 +60,25 @@ static bool setODR(bmp390_io_t *hw, uint8_t odr) {
   // WARNING: Double check these work if you change them,
   //          only certain combos work
   switch (odr) {
-  case ODR_200_HZ:              // 24 cm
-    press_os = OVERSAMPLING_1X; // 2.64 Pa
-    temp_os  = OVERSAMPLING_1X; // 0.0050 C
+  case BMP390_ODR_200_HZ:              // 24 cm
+    press_os = BMP390_OVERSAMPLING_1X; // 2.64 Pa
+    temp_os  = BMP390_OVERSAMPLING_1X; // 0.0050 C
     break;
-  case ODR_100_HZ:              // 12 cm
-    press_os = OVERSAMPLING_2X; // 1.32 Pa
-    temp_os  = OVERSAMPLING_1X; // 0.0050 C
+  case BMP390_ODR_100_HZ:              // 12 cm
+    press_os = BMP390_OVERSAMPLING_2X; // 1.32 Pa
+    temp_os  = BMP390_OVERSAMPLING_1X; // 0.0050 C
     break;
-  case ODR_50_HZ:               // 3cm
-    press_os = OVERSAMPLING_8X; // 0.33 Pa
-    temp_os  = OVERSAMPLING_1X; // 0.0050 C
+  case BMP390_ODR_50_HZ:               // 3cm
+    press_os = BMP390_OVERSAMPLING_8X; // 0.33 Pa
+    temp_os  = BMP390_OVERSAMPLING_1X; // 0.0050 C
     break;
-  case ODR_25_HZ:
-    press_os = OVERSAMPLING_16X; // 0.17 Pa
-    temp_os  = OVERSAMPLING_2X;  // 0.0025 C
+  case BMP390_ODR_25_HZ:
+    press_os = BMP390_OVERSAMPLING_16X; // 0.17 Pa
+    temp_os  = BMP390_OVERSAMPLING_2X;  // 0.0025 C
     break;
-  case ODR_12_5_HZ:
-    press_os = OVERSAMPLING_32X;
-    temp_os  = OVERSAMPLING_2X;
+  case BMP390_ODR_12_5_HZ:
+    press_os = BMP390_OVERSAMPLING_32X;
+    temp_os  = BMP390_OVERSAMPLING_2X;
     break;
   default:
     return false;
@@ -183,7 +191,7 @@ static float compensate_pressure(bmp390_io_t *hw, const uint32_t uncomp_press) {
   return prs;
 }
 
-static bmp390_io_t *bmp390_init(interface_t type, uint8_t port, uint8_t addr, uint8_t odr, uint8_t iir) {
+static bmp390_io_t *bmp390_init(interface_t type, uint8_t port, uint8_t addr, bmp390_odr_t odr, bmp390_iir_t iir) {
   bmp390_io_t *hw = (bmp390_io_t *)calloc(1, sizeof(bmp390_io_t));
   if (hw == NULL) return NULL;
 
@@ -256,11 +264,11 @@ static bmp390_io_t *bmp390_init(interface_t type, uint8_t port, uint8_t addr, ui
   return hw;
 }
 
-bmp390_io_t *bmp390_i2c_init(uint8_t port, uint8_t addr, uint8_t odr, uint8_t iir) {
+bmp390_io_t *bmp390_i2c_init(uint8_t port, uint8_t addr, bmp390_odr_t odr, bmp390_iir_t iir) {
   return bmp390_init(I2C_INTERFACE, port, addr, odr, iir);
 }
 
-bmp390_io_t *bmp390_spi_init(uint8_t port, uint8_t cs, uint8_t odr, uint8_t iir) {
+bmp390_io_t *bmp390_spi_init(uint8_t port, pin_t cs, bmp390_odr_t odr, bmp390_iir_t iir) {
   return bmp390_init(SPI_INTERFACE, port, cs, odr, iir);
 }
 

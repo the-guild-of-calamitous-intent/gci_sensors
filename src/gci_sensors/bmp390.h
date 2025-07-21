@@ -34,29 +34,42 @@ extern "C" {
 constexpr uint8_t BMP390_ADDRESS       = 0x77;
 constexpr uint8_t BMP390_ADDRESS_ALT   = 0x76;
 
-constexpr uint8_t OVERSAMPLING_1X      = 0x00;
-constexpr uint8_t OVERSAMPLING_2X      = 0x01;
-constexpr uint8_t OVERSAMPLING_4X      = 0x02;
-constexpr uint8_t OVERSAMPLING_8X      = 0x03;
-constexpr uint8_t OVERSAMPLING_16X     = 0x04;
-constexpr uint8_t OVERSAMPLING_32X     = 0x05;
+// constexpr uint8_t BMP390_IIR_DISABLE   = 0x00; // 000 0   1 step lag
+// constexpr uint8_t BMP390_IIR_COEFF_OFF = 0x00; // 000 0   1 step lag
+// constexpr uint8_t BMP390_IIR_COEFF_1   = 0x02; // 001 0  10 step lag
+// constexpr uint8_t BMP390_IIR_COEFF_3   = 0x04; // 010 0  20 step lag
+// constexpr uint8_t BMP390_IIR_COEFF_7   = 0x06; // 011 0  40 step lag
+// constexpr uint8_t BMP390_IIR_COEFF_15  = 0x08; // 100 0
+// constexpr uint8_t BMP390_IIR_COEFF_31  = 0x0A; // 101 0
+// constexpr uint8_t BMP390_IIR_COEFF_63  = 0x0C; // 110 0
+// constexpr uint8_t BMP390_IIR_COEFF_127 = 0x0E; // 111 0
 
-constexpr uint8_t IIR_FILTER_DISABLE   = 0x00; // 000 0   1 step lag
-constexpr uint8_t IIR_FILTER_COEFF_OFF = 0x00; // 000 0   1 step lag
-constexpr uint8_t IIR_FILTER_COEFF_1   = 0x02; // 001 0  10 step lag
-constexpr uint8_t IIR_FILTER_COEFF_3   = 0x04; // 010 0  20 step lag
-constexpr uint8_t IIR_FILTER_COEFF_7   = 0x06; // 011 0  40 step lag
-constexpr uint8_t IIR_FILTER_COEFF_15  = 0x08; // 100 0
-constexpr uint8_t IIR_FILTER_COEFF_31  = 0x0A; // 101 0
-constexpr uint8_t IIR_FILTER_COEFF_63  = 0x0C; // 110 0
-constexpr uint8_t IIR_FILTER_COEFF_127 = 0x0E; // 111 0
+typedef enum: uint8_t {
+  BMP390_IIR_DISABLE   = 0x00, // 000 0   1 step lag
+  BMP390_IIR_COEFF_OFF = 0x00, // 000 0   1 step lag
+  BMP390_IIR_COEFF_1   = 0x02, // 001 0  10 step lag
+  BMP390_IIR_COEFF_3   = 0x04, // 010 0  20 step lag
+  BMP390_IIR_COEFF_7   = 0x06, // 011 0  40 step lag
+  BMP390_IIR_COEFF_15  = 0x08, // 100 0
+  BMP390_IIR_COEFF_31  = 0x0A, // 101 0
+  BMP390_IIR_COEFF_63  = 0x0C, // 110 0
+  BMP390_IIR_COEFF_127 = 0x0E // 111 0
+} bmp390_iir_t;
 
-// datasheet Table 45, p 38 oversample hz
-constexpr uint8_t ODR_200_HZ   = 0x00;
-constexpr uint8_t ODR_100_HZ   = 0x01;
-constexpr uint8_t ODR_50_HZ    = 0x02;
-constexpr uint8_t ODR_25_HZ    = 0x03;
-constexpr uint8_t ODR_12_5_HZ  = 0x04;
+// // datasheet Table 45, p 38 oversample hz
+// constexpr uint8_t BMP390_ODR_200_HZ   = 0x00;
+// constexpr uint8_t BMP390_ODR_100_HZ   = 0x01;
+// constexpr uint8_t BMP390_ODR_50_HZ    = 0x02;
+// constexpr uint8_t BMP390_ODR_25_HZ    = 0x03;
+// constexpr uint8_t BMP390_ODR_12_5_HZ  = 0x04;
+
+typedef enum: uint8_t {
+  BMP390_ODR_200_HZ   = 0x00,
+  BMP390_ODR_100_HZ   = 0x01,
+  BMP390_ODR_50_HZ    = 0x02,
+  BMP390_ODR_25_HZ    = 0x03,
+  BMP390_ODR_12_5_HZ  = 0x04
+} bmp390_odr_t;
 
 constexpr uint8_t LEN_P_T_DATA = 6;
 
@@ -86,35 +99,10 @@ typedef struct {
   float a, b;
 } comp_press_t;
 
-// typedef struct {
-//   int32_t pressure, temperature;
-//   bool ok;
-// } bmp390_raw_t;
-
 typedef struct {
   float pressure;
   float temperature;
-  // bool ok;
 } bmp390_t;
-
-// enum bmp_error : uint8_t {
-//   NO_ERROR,
-//   ERROR_WHOAMI,
-//   ERROR_RESET,
-//   ERROR_CAL_DATA,
-//   ERROR_ODR,
-//   ERROR_IIR_FILTER,
-//   ERROR_INT_PIN,
-//   ERROR_PWR_MODE
-// };
-
-// typedef struct {
-//   i2c_inst_t *i2c;
-//   uint8_t addr;
-//   bmp3_reg_calib_data calib;
-//   uint8_t buffer[LEN_P_T_DATA];
-// } bmp390_i2c_t;
-
 typedef struct {
   comm_interface_t *comm;
   // uint8_t addr;
@@ -125,10 +113,10 @@ typedef struct {
   bool ok;
 } bmp390_io_t;
 
-bmp390_io_t *bmp390_i2c_init(uint8_t port, uint8_t addr, uint8_t odr,
-                             uint8_t iir);
-bmp390_io_t *bmp390_spi_init(uint8_t port, uint8_t cs, uint8_t odr,
-                             uint8_t iir);
+bmp390_io_t *bmp390_i2c_init(uint8_t port, uint8_t addr, bmp390_odr_t odr,
+                             bmp390_iir_t iir);
+bmp390_io_t *bmp390_spi_init(uint8_t port, pin_t cs, bmp390_odr_t odr,
+                             bmp390_iir_t iir);
 
 const bmp390_t bmp390_read(bmp390_io_t *hw);
 bool bmp390_ready(bmp390_io_t *hw);
@@ -136,3 +124,26 @@ bool bmp390_ready(bmp390_io_t *hw);
 #if defined __cplusplus
 }
 #endif
+
+// typedef struct {
+//   int32_t pressure, temperature;
+//   bool ok;
+// } bmp390_raw_t;
+
+// enum bmp_error : uint8_t {
+//   NO_ERROR,
+//   ERROR_WHOAMI,
+//   ERROR_RESET,
+//   ERROR_CAL_DATA,
+//   ERROR_ODR,
+//   ERROR_BMP390_IIR,
+//   ERROR_INT_PIN,
+//   ERROR_PWR_MODE
+// };
+
+// typedef struct {
+//   i2c_inst_t *i2c;
+//   uint8_t addr;
+//   bmp3_reg_calib_data calib;
+//   uint8_t buffer[LEN_P_T_DATA];
+// } bmp390_i2c_t;

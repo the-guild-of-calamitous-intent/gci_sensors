@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <tusb.h> // wait for USB
 
-constexpr pin_t i2c_scl = 1;
-constexpr pin_t i2c_sda = 0;
+#define i2c_scl 1
+#define i2c_sda 0
 
 int main() {
   stdio_init_all();
@@ -26,7 +26,7 @@ int main() {
 
   lsm6dsox_io_t *imu = NULL;
   while (true) {
-    imu = lsm6dsox_i2c_init(0, LSM6DSOX_ADDRESS, ACCEL_RANGE_4_G, GYRO_RANGE_2000_DPS, RATE_208_HZ);
+    imu = lsm6dsox_i2c_init(0, LSM6DSOX_ADDRESS, LSM6DSOX_ACCEL_RANGE_4_G, LSM6DSOX_GYRO_RANGE_2000_DPS, LSM6DSOX_RATE_208_HZ);
     if (imu != NULL) break;
     printf("imu error\n");
     sleep_ms(1000);

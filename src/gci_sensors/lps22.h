@@ -17,14 +17,41 @@ References:
 extern "C" {
 #endif
 
+typedef enum : uint8_t {
+  LPS22_ODR_PWR_DOWN = 0,
+  LPS22_ODR_1HZ      = (1 << 4),
+  LPS22_ODR_10HZ     = (2 << 4),
+  LPS22_ODR_25HZ     = (3 << 4),
+  LPS22_ODR_50HZ     = (4 << 4),
+  LPS22_ODR_75HZ     = (5 << 4)
+} lps22_odr_t;
+
+typedef struct {
+  float pressure;
+  float temperature;
+} lps22_t;
+
+typedef struct {
+  comm_interface_t *comm;
+  uint8_t sensor_data[5];
+  bool ok;
+} lps22_io_t;
+
+lps22_io_t *lps22_spi_init(uint8_t port, pin_t cs, lps22_odr_t odr);
+lps22_t lps22_read(lps22_io_t *hw);
+
+#if defined __cplusplus
+}
+#endif
+
 // Registers and fields
 // CTRL_REG1 (10)
-#define LPS22_ODR_PWR_DOWN 0
-#define LPS22_ODR_1HZ (1 << 4)
-#define LPS22_ODR_10HZ (2 << 4)
-#define LPS22_ODR_25HZ (3 << 4)
-#define LPS22_ODR_50HZ (4 << 4)
-#define LPS22_ODR_75HZ (5 << 4)
+// #define LPS22_ODR_PWR_DOWN 0
+// #define LPS22_ODR_1HZ (1 << 4)
+// #define LPS22_ODR_10HZ (2 << 4)
+// #define LPS22_ODR_25HZ (3 << 4)
+// #define LPS22_ODR_50HZ (4 << 4)
+// #define LPS22_ODR_75HZ (5 << 4)
 
 // #define LPS22_EN_LPFP (1 << 3) // enable LPF on pressure
 // #define LPS22_LPFP_CFG (1 << 2) // 0 - ODR/9, 1 - ODR/20
@@ -42,22 +69,3 @@ extern "C" {
 //   LPS22_OK,
 //   LPS22_ERROR_WH
 // } lps22_errors_t;
-
-typedef struct {
-  float pressure;
-  float temperature;
-} lps22_t;
-
-typedef struct {
-  comm_interface_t *comm;
-  uint8_t sensor_data[5];
-  // int errflag;
-  bool ok;
-} lps22_io_t;
-
-lps22_io_t *lps22_spi_init(uint8_t port, pin_t cs, uint8_t odr);
-lps22_t lps22_read(lps22_io_t *hw);
-
-#if defined __cplusplus
-}
-#endif

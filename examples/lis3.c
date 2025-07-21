@@ -7,8 +7,8 @@
 
 #include "gci_sensors/lis3mdl.h"
 
-constexpr pin_t i2c_scl = 1;
-constexpr pin_t i2c_sda = 0;
+#define i2c_scl 1
+#define i2c_sda 0
 
 int main() {
   stdio_init_all();
@@ -26,7 +26,7 @@ int main() {
 
   lis3mdl_io_t *mag = NULL;
   while (true) {
-    mag = lis3mdl_i2c_init(0, LIS3MDL_ADDRESS, RANGE_4GAUSS, ODR_155HZ);
+    mag = lis3mdl_i2c_init(0, LIS3MDL_ADDRESS, LIS3MDL_RANGE_4GAUSS, LIS3MDL_ODR_155HZ);
     if (mag != NULL) break;
     printf("mag error\n");
     sleep_ms(1000);

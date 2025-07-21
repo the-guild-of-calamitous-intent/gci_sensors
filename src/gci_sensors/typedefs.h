@@ -14,24 +14,22 @@ extern "C" {
 // constexpr float M_PIf   = 3.14159265358979323846f;
 
 #ifndef __PIN__
-#define __PIN__
-  typedef uint32_t pin_t;
+  #define __PIN__
+typedef uint32_t pin_t;
 #endif
-
 
 #ifndef __VEC3F__
-#define __VEC3F__
-  typedef struct {
-    float x, y, z;
-  } vec3f_t;
+  #define __VEC3F__
+typedef struct {
+  float x, y, z;
+} vec3f_t;
 #endif
 
-
 #ifndef __VEC3S__
-#define __VEC3S__
-  typedef struct {
-    int16_t x, y, z;
-  } vec3s_t;
+  #define __VEC3S__
+typedef struct {
+  int16_t x, y, z;
+} vec3s_t;
 #endif
 
 // typedef struct {

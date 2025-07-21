@@ -1,7 +1,8 @@
 #pragma once
 
-#include "gci_sensors/io.h"
 #include <stdint.h>
+#include <stdbool.h>
+#include "gci_sensors/io.h"
 
 #if defined __cplusplus
 extern "C" {
@@ -19,22 +20,38 @@ extern "C" {
 
 #define HMC5883_BUFFER_SIZE 6
 
+// typedef enum: uint8_t {
+//   HMC5883_0_88 = 0,
+//   HMC5883_1_3 = 1,
+//   HMC5883_1_9 = 2,
+//   HMC5883_2_5 = 3,
+//   HMC5883_4_0 = 4,
+//   HMC5883_4_7 = 5,
+//   HMC5883_5_6 = 6,
+//   HMC5883_8_1 = 7,
+// } hmc5883_range_t;
+
+typedef enum: uint8_t {
+  HMC5883_2GAUSS = (0 << 4),
+  HMC5883_8GAUSS = (1 << 4),
+} hmc5883_range_t;
+
 typedef struct {
   comm_interface_t *comm;
   float scale;                      // int -> float
   float mcal[12];                   // scale/bias
   uint8_t buf[HMC5883_BUFFER_SIZE]; // used for reading
   bool calibrated;
-  // bool use_imu_timestamp; // whose timestamp to use
   bool ok;
 } hmc5883_io_t;
 
 typedef struct {
   float x, y, z;
-  // bool ok;
+  float temperature;
 } hmc5883_t;
 
-hmc5883_io_t *hmc5883_i2c_init(uint8_t port);
+hmc5883_io_t *hmc5883_i2c_init(uint8_t port, hmc5883_range_t range);
+hmc5883_io_t *hmc5883_spi_init(uint8_t port, hmc5883_range_t range);
 hmc5883_t hmc5883_read(hmc5883_io_t *hw);
 
 #if defined __cplusplus

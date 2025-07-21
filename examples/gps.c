@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <tusb.h> // wait for USB
 
-constexpr pin_t i2c_scl = 1;
-constexpr pin_t i2c_sda = 0;
+#define i2c_scl 1
+#define i2c_sda 0
 
 int main() {
   stdio_init_all();

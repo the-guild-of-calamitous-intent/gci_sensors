@@ -10,17 +10,12 @@
 // screen /dev/tty.usbmodemXXXXXX
 // ctrl-a-d
 
-// constexpr pin_t RX             = 0;
-// constexpr pin_t CS             = 1;
-// constexpr pin_t SCK            = 2;
-// constexpr pin_t TX             = 3;
-
-constexpr pin_t SCK = 2;
-constexpr pin_t TX  = 3; // SDO
-constexpr pin_t RX  = 4; // SDI
-constexpr pin_t CS  = 13;
-constexpr pin_t INT = 14;
-constexpr pin_t EXT = 5;
+#define SCK 2
+#define TX 3 // SDO
+#define RX 4 // SDI
+#define CS 13
+#define INT 14
+#define EXT 5 // not using
 
 bool bar_ready = false;
 
@@ -47,8 +42,8 @@ int main() {
   }
 
   uint32_t speed = gcis_spi0_init(GCIS_SPI_1MHZ, RX, TX, SCK);
-  // gcis_spi_init_cs(CS);
-  gcis_spi_init_cs(EXT);
+  gcis_spi_init_cs(CS, SPI_CS_PULLDOWN);
+  gcis_spi_init_cs(EXT, 0);
 
   printf(">> spi instance: %u baudrate: %u\n", 0, speed);
   printf(">> spi SDI(RX): %u SDO(TX): %u SCK: %u CS: %u\n", RX, TX, SCK, CS);
@@ -78,7 +73,7 @@ int main() {
   // gpio_pull_down(INT);          // Enable internal pull-up resistor
   // gpio_pull_up(INT);
 
-  gpio_disable_pulls(INT);
+  // gpio_disable_pulls(INT);
 
   // Enable interrupt for the GPIO pin on falling edge
   gpio_set_irq_enabled_with_callback(INT, GPIO_IRQ_EDGE_RISE, true, &handle_interrupt);

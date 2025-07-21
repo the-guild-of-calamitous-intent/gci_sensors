@@ -6,11 +6,15 @@ LIST(APPEND examples
     gps
     interrupt
     lps22_spi
+    hmc5883_i2c
 )
 
 foreach(app ${examples})
     add_executable(${app} ${app}.c)
-    target_link_libraries(${app} PUBLIC ${PROJECT_NAME})
+    target_link_libraries(${app} PUBLIC
+        ${PROJECT_NAME}
+        pico_multicore
+    )
 
     # Set stdio functions to use USB rather than the serial ports
     pico_enable_stdio_usb(${app} 1)
