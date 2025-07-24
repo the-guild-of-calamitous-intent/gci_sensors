@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <tusb.h> // wait for USB
 
-#include "gci_sensors/hmc5883.h"
+#include "gci_sensors/qmc5883.h"
 
 #define PORT 0
 #define SDA 4
@@ -25,18 +25,18 @@ int main() {
 
   printf("/// MAGNETOMETER START ///\n");
 
-  hmc5883_io_t *mag = NULL;
+  qmc5883_io_t *mag = NULL;
   while (true) {
-    mag = hmc5883_i2c_init(0, HMC5883_8GAUSS);
+    mag = qmc5883_i2c_init(0, QMC5883_8GAUSS);
     if (mag != NULL) break;
-    printf("*** Couldn't initalize HMC5883 ***\n");
+    printf("*** Couldn't initalize QMC5883 ***\n");
     sleep_ms(1000);
   }
 
   while (true) {
     sleep_ms(2000);
 
-    hmc5883_t m = hmc5883_read(mag);
+    qmc5883_t m = qmc5883_read(mag);
     if (mag->ok == false) {
       printf("*** bad reading ***\n");
       continue;

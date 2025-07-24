@@ -22,7 +22,7 @@ screen /dev/tty.usbmodemxxxx # ctrl-a ctrl-d to exit
   - LSM6DSOX or LSM6DSO (no ML core)
 - Magnetometer
   - LIS3MDL
-  - HMC5883L
+  - QMC5883L
 - GPS
   - PA1010D (I2C only)
 - Pressure/Temperature
@@ -34,7 +34,7 @@ All sensors have a simple interface:
 ```c
 // return: NULL - error
 //         senosr_io_t - success
-sensor_io_t* sensor_bus_init(uint8_t port, uint8_t address, ...);
+sensor_io_t* gcis_[spi,i2c]_init(uint8_t port, uint8_t address, ...);
 sensor_t sensor_read(sensor_io_t* hw);
 int32_t sensor_write(sensor_io_t* hw, uint8_t reg, uint8_t* buffer, uint8_t length);
 // others as needed ...
@@ -57,18 +57,19 @@ int32_t sensor_write(sensor_io_t* hw, uint8_t reg, uint8_t* buffer, uint8_t leng
 ## Generic API
 
 - Naming convention
-  - `<sensor>_t` is the output
+  - `<sensor>_t` is the output, contains sensor readings
   - `<sensor>_io_t` is the generic information to interface
     with the sensor via I2C or SPI
+    - Errors are captured in each `<sensor>_io_t`
+      - `bool ok`: true-ok, false-error
+      - `int errnum`: error number
   - Functions are generally named `return_type <sensor>_<action>(args)`
     - `<action>`s can be `init`, `read`, `write`, etc
     - `return_type` can be `int`, `void`, `<sensor>_t`, etc
     - `int` return is typically:
       - `0`: success
       - `>0`: success or baudrate or data read/written
-    - Errors are captured in each `<sensor>_io_t`
-      - `bool ok`: true-ok, false-error
-      - `int errnum`: error number
+      - `<0`: error
 
 ## ToDo
 
@@ -77,7 +78,9 @@ int32_t sensor_write(sensor_io_t* hw, uint8_t reg, uint8_t* buffer, uint8_t leng
   - [ ] lps22
   - [ ] lsm6dsox
   - [ ] pa1010d
-  - [ ] hmc5883l
+  - [ ] qmc5883l
+- [ ] Add a `<sensor>_setmode(...)` for sensors
+- [ ] For completeness, add a `<sensor>_free(...)` for sensors
 - [x] Remove external libraries
 - [ ] Add linux support
 

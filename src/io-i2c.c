@@ -60,15 +60,6 @@ int32_t gcis_i2c_bus_init(uint32_t port, uint32_t baud, pin_t pin_sda, pin_t pin
   // return hw;
   return i2c_init(i2c, baud);
 }
-
-// int32_t gcis_i2c0_bus_init(uint32_t baud, pin_t pin_sda, pin_t pin_scl) {
-//   return gcis_i2c_bus_init(0, baud, pin_sda, pin_scl);
-// }
-
-// int32_t gci_i2c1_bus_init(uint32_t baud, pin_t pin_sda, pin_t pin_scl) {
-//   return gci_i2c_bus_init(1, baud, pin_sda, pin_scl);
-// }
-
 int i2c_write(void *config, uint8_t reg, const uint8_t *data, size_t len) {
   i2c_config_t *cfg = (i2c_config_t *)config;
 
@@ -87,6 +78,15 @@ int i2c_read(void *config, uint8_t reg, uint8_t *data, size_t len) {
   i2c_write_blocking(cfg->i2c, cfg->addr, &reg, 1, I2C_BUS_HOLD);
   return i2c_read_blocking(cfg->i2c, cfg->addr, data, len, I2C_BUS_RELEASE);
 }
+
+// int32_t gcis_i2c0_bus_init(uint32_t baud, pin_t pin_sda, pin_t pin_scl) {
+//   return gcis_i2c_bus_init(0, baud, pin_sda, pin_scl);
+// }
+
+// int32_t gci_i2c1_bus_init(uint32_t baud, pin_t pin_sda, pin_t pin_scl) {
+//   return gci_i2c_bus_init(1, baud, pin_sda, pin_scl);
+// }
+
 
 // --- SPI Implementation ---
 

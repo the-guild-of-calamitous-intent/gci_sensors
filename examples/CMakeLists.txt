@@ -6,7 +6,7 @@ LIST(APPEND examples
     gps
     interrupt
     lps22_spi
-    hmc5883_i2c
+    qmc5883_i2c
 )
 
 foreach(app ${examples})

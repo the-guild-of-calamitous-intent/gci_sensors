@@ -179,11 +179,15 @@ bool lsm6dsox_reboot(lsm6dsox_io_t *hw) {
 lsm6dsox_t lsm6dsox_read(lsm6dsox_io_t *hw) {
   int32_t err;
   lsm6dsox_t ret;
+  uint8_t *buff = hw->buff;
+  float as = hw->a_scale;
+  float gs = hw->g_scale;
   hw->ok                 = false;
   comm_interface_t *comm = hw->comm;
 
   // if (!readRegisters(REG_OUT_TEMP_L, sizeof(block.b), block.b)) return ret;
-  err = comm->read(comm->config, REG_OUT_TEMP_L, hw->block.b, LSM6DSOX_BUFFER_SIZE);
+  // err = comm->read(comm->config, REG_OUT_TEMP_L, hw->block.b, LSM6DSOX_BUFFER_SIZE);
+  err = comm->read(comm->config, REG_OUT_TEMP_L, buff, LSM6DSOX_BUFFER_SIZE);
   if (err < 0) {
     hw->ok     = false;
     hw->errnum = LSM6DSOX_ERROR_READ;
@@ -191,18 +195,32 @@ lsm6dsox_t lsm6dsox_read(lsm6dsox_io_t *hw) {
   }
   // printf("read data\n");
 
-  ret.a.x = hw->a_scale * (float)hw->block.a.x;
-  ret.a.y = hw->a_scale * (float)hw->block.a.y;
-  ret.a.z = hw->a_scale * (float)hw->block.a.z;
+  // t: 01
+  // g: 23 45 67
+  // a: 89 1011 1213
 
-  ret.g.x = hw->g_scale * (float)hw->block.g.x;
-  ret.g.y = hw->g_scale * (float)hw->block.g.y;
-  ret.g.z = hw->g_scale * (float)hw->block.g.z;
+  ret.temperature = (float)(((int16_t)buff[0] << 8) + buff[1]) * TEMP_SCALE + 25.0f;
+
+  ret.g.x = gs * (float)(((int16_t)buff[2] << 8) + buff[3]);
+  ret.g.y = gs * (float)(((int16_t)buff[4] << 8) + buff[5]);
+  ret.g.z = gs * (float)(((int16_t)buff[6] << 8) + buff[7]);
+
+  ret.a.x = as * (float)(((int16_t)buff[8] << 8) + buff[9]);
+  ret.a.y = as * (float)(((int16_t)buff[10] << 8) + buff[11]);
+  ret.a.z = as * (float)(((int16_t)buff[12] << 8) + buff[13]);
+
+  // ret.a.x = hw->a_scale * (float)hw->block.a.x;
+  // ret.a.y = hw->a_scale * (float)hw->block.a.y;
+  // ret.a.z = hw->a_scale * (float)hw->block.a.z;
+
+  // ret.g.x = hw->g_scale * (float)hw->block.g.x;
+  // ret.g.y = hw->g_scale * (float)hw->block.g.y;
+  // ret.g.z = hw->g_scale * (float)hw->block.g.z;
 
   // ret.temperature = hw->block.regs.temperature; // 52Hz, pg13, Table 4
   // pg 13, Table 4, temp ODR is ~52Hz
   // ret.temperature = (float)(hw->block.regs.temperature) * TEMP_SCALE + 25.0f;
-  ret.temperature = (float)(hw->block.temperature) * TEMP_SCALE + 25.0f;
+  // ret.temperature = (float)(hw->block.temperature) * TEMP_SCALE + 25.0f;
 
   // ok = comm->read(comm->config, REG_TIMESTAMP0, hw->block.b, 4);
   // if (ok < 0) return ret;

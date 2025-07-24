@@ -17,16 +17,6 @@ extern "C" {
 constexpr int LSM6DSOX_ADDRESS     = 0x6A;
 constexpr int LSM6DSOX_ADDRESS_ALT = 0x6B;
 
-// The accelerometer/gyroscope data rate
-// constexpr uint8_t RATE_SHUTDOWN = 0x00;
-// constexpr uint8_t RATE_104_HZ   = 0x40;
-// constexpr uint8_t RATE_208_HZ   = 0x50;
-// constexpr uint8_t RATE_416_HZ   = 0x60;
-// constexpr uint8_t RATE_833_HZ   = 0x70;
-// constexpr uint8_t RATE_1660_HZ  = 0x80;
-// constexpr uint8_t RATE_3330_HZ  = 0x90;
-// constexpr uint8_t RATE_6660_HZ  = 0xA0;
-
 typedef enum : uint8_t {
   LSM6DSOX_RATE_SHUTDOWN = 0x00,
   LSM6DSOX_RATE_104_HZ   = 0x40,
@@ -38,25 +28,12 @@ typedef enum : uint8_t {
   LSM6DSOX_RATE_6660_HZ  = 0xA0
 } lsm6dsox_odr_t;
 
-// The accelerometer data range
-// constexpr uint8_t ACCEL_RANGE_2_G  = (0x00 << 2);
-// constexpr uint8_t ACCEL_RANGE_16_G = (0x01 << 2); // CTRL8_XL: XL_FS_MODE = 0
-// constexpr uint8_t ACCEL_RANGE_4_G  = (0x02 << 2);
-// constexpr uint8_t ACCEL_RANGE_8_G  = (0x03 << 2);
-
 typedef enum {
   LSM6DSOX_ACCEL_RANGE_2_G  = (0x00 << 2),
   LSM6DSOX_ACCEL_RANGE_16_G = (0x01 << 2), // CTRL8_XL: XL_FS_MODE = 0
   LSM6DSOX_ACCEL_RANGE_4_G  = (0x02 << 2),
   LSM6DSOX_ACCEL_RANGE_8_G  = (0x03 << 2)
 } lsm6dsox_xl_range_t;
-
-// The gyro data range
-// constexpr uint8_t GYRO_RANGE_125_DPS  = (0x01 << 1);
-// constexpr uint8_t GYRO_RANGE_250_DPS  = (0x00 << 1);
-// constexpr uint8_t GYRO_RANGE_500_DPS  = (0x02 << 1);
-// constexpr uint8_t GYRO_RANGE_1000_DPS = (0x04 << 1);
-// constexpr uint8_t GYRO_RANGE_2000_DPS = (0x06 << 1);
 
 typedef enum {
   LSM6DSOX_GYRO_RANGE_125_DPS  = (0x01 << 1),
@@ -67,9 +44,6 @@ typedef enum {
 } lsm6dsox_g_range_t;
 
 #define LSM6DSOX_BUFFER_SIZE 14
-
-// #define LSM6DSOX_INT1_CRTL 0x02 // DRDY Gyro
-// #define LSM6DSOX_INT2_CRTL 0x00 // disable INT2
 
 typedef enum {
   LSM6DSOX_ERROR_NONE         = 0,
@@ -99,20 +73,20 @@ typedef struct {
   // uint64_t timestamp_us;
 } lsm6dsox_t;
 
-typedef union {
-  // struct regs_t {
-  //   int16_t temperature; // 2b, -40C to 80C
-  //   vec3s_t g;         // 2*3 = 6b
-  //   vec3s_t a;         // 2*3 = 6b
-  // } regs;                // 14b
-  struct {
-    int16_t temperature; // 2b, -40C to 80C
-    vec3s_t g;           // 2*3 = 6b
-    vec3s_t a;           // 2*3 = 6b
-  }; // 14b
-  // uint32_t timestamp;
-  uint8_t b[LSM6DSOX_BUFFER_SIZE];
-} block_t;
+// typedef union {
+//   // struct regs_t {
+//   //   int16_t temperature; // 2b, -40C to 80C
+//   //   vec3s_t g;         // 2*3 = 6b
+//   //   vec3s_t a;         // 2*3 = 6b
+//   // } regs;                // 14b
+//   struct {
+//     int16_t temperature; // 2b, -40C to 80C
+//     vec3s_t g;           // 2*3 = 6b
+//     vec3s_t a;           // 2*3 = 6b
+//   }; // 14b
+//   // uint32_t timestamp;
+//   uint8_t b[LSM6DSOX_BUFFER_SIZE];
+// } block_t;
 
 typedef struct {
   comm_interface_t *comm;
@@ -120,7 +94,8 @@ typedef struct {
   float a_scale;  // int -> float
   float acal[12]; // accel scale/bias
   float gcal[12]; // gyro scale/bias
-  block_t block;
+  // block_t block;
+  uint8_t buff[LSM6DSOX_BUFFER_SIZE];
   bool ok;
   sox6dsox_error_t errnum;
 } lsm6dsox_io_t;
@@ -148,6 +123,32 @@ lsm6dsox_io_t *lsm6dsox_spi_init(uint8_t port, pin_t cs,
 #if defined __cplusplus
 }
 #endif
+
+// The accelerometer/gyroscope data rate
+// constexpr uint8_t RATE_SHUTDOWN = 0x00;
+// constexpr uint8_t RATE_104_HZ   = 0x40;
+// constexpr uint8_t RATE_208_HZ   = 0x50;
+// constexpr uint8_t RATE_416_HZ   = 0x60;
+// constexpr uint8_t RATE_833_HZ   = 0x70;
+// constexpr uint8_t RATE_1660_HZ  = 0x80;
+// constexpr uint8_t RATE_3330_HZ  = 0x90;
+// constexpr uint8_t RATE_6660_HZ  = 0xA0;
+
+// The accelerometer data range
+// constexpr uint8_t ACCEL_RANGE_2_G  = (0x00 << 2);
+// constexpr uint8_t ACCEL_RANGE_16_G = (0x01 << 2); // CTRL8_XL: XL_FS_MODE = 0
+// constexpr uint8_t ACCEL_RANGE_4_G  = (0x02 << 2);
+// constexpr uint8_t ACCEL_RANGE_8_G  = (0x03 << 2);
+
+// The gyro data range
+// constexpr uint8_t GYRO_RANGE_125_DPS  = (0x01 << 1);
+// constexpr uint8_t GYRO_RANGE_250_DPS  = (0x00 << 1);
+// constexpr uint8_t GYRO_RANGE_500_DPS  = (0x02 << 1);
+// constexpr uint8_t GYRO_RANGE_1000_DPS = (0x04 << 1);
+// constexpr uint8_t GYRO_RANGE_2000_DPS = (0x06 << 1);
+
+// #define LSM6DSOX_INT1_CRTL 0x02 // DRDY Gyro
+// #define LSM6DSOX_INT2_CRTL 0x00 // disable INT2
 
 // Betaflight values
 // Accel:
