@@ -73,21 +73,6 @@ typedef struct {
   // uint64_t timestamp_us;
 } lsm6dsox_t;
 
-// typedef union {
-//   // struct regs_t {
-//   //   int16_t temperature; // 2b, -40C to 80C
-//   //   vec3s_t g;         // 2*3 = 6b
-//   //   vec3s_t a;         // 2*3 = 6b
-//   // } regs;                // 14b
-//   struct {
-//     int16_t temperature; // 2b, -40C to 80C
-//     vec3s_t g;           // 2*3 = 6b
-//     vec3s_t a;           // 2*3 = 6b
-//   }; // 14b
-//   // uint32_t timestamp;
-//   uint8_t b[LSM6DSOX_BUFFER_SIZE];
-// } block_t;
-
 typedef struct {
   comm_interface_t *comm;
   float g_scale;  // int -> float
@@ -123,6 +108,22 @@ lsm6dsox_io_t *lsm6dsox_spi_init(uint8_t port, pin_t cs,
 #if defined __cplusplus
 }
 #endif
+
+
+// typedef union {
+//   // struct regs_t {
+//   //   int16_t temperature; // 2b, -40C to 80C
+//   //   vec3s_t g;         // 2*3 = 6b
+//   //   vec3s_t a;         // 2*3 = 6b
+//   // } regs;                // 14b
+//   struct {
+//     int16_t temperature; // 2b, -40C to 80C
+//     vec3s_t g;           // 2*3 = 6b
+//     vec3s_t a;           // 2*3 = 6b
+//   }; // 14b
+//   // uint32_t timestamp;
+//   uint8_t b[LSM6DSOX_BUFFER_SIZE];
+// } block_t;
 
 // The accelerometer/gyroscope data rate
 // constexpr uint8_t RATE_SHUTDOWN = 0x00;

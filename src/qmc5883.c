@@ -26,14 +26,6 @@
 // 	128         	0x80
 // 	64          	0xC0 
 
-// QMC5883L I2C address and register definitions
-
-// #define QMC5883L_CONFIG_A_REG 0x00
-// #define QMC5883L_CONFIG_B_REG 0x01
-// #define QMC5883L_MODE_REG 0x02
-// #define QMC5883L_DATA_X_MSB 0x03
-// #define QMC5883L_DATA_X_MSB 0x00
-// #define QMC5883L_STATUS_REG 0x09
 #define QMC5883L_DATA_X_LSB_REG 0x00
 #define QMC5883L_STATUS_REG 0x06
 #define QMC5883L_TEMPERATURE_REG 0x07
@@ -46,22 +38,10 @@
 #define QMC5883L_WHO_AM_I 0xFF // 0x68 // ASCII H
 #define QMC5883L_SOFT_RESET (1 << 7)
 
-// typedef enum: uint8_t {
-//   QMC5883_MODE_NORMAL = 0, // <= default
-//   QMC5883_MODE_POS_BIAS = 1,
-//   QMC5883_MODE_NEG_BIAS = 2
-// } qmc5883_mode_t;
-
 typedef enum: uint8_t {
   QMC5883_MODE_STANDBY = 0b00, // <= default
   QMC5883_MODE_CONTINUOUS = 0b01
 } qmc5883_mode_t;
-
-// typedef enum: uint8_t {
-//   QMC5883_ODR_15HZ = (4 << 2),
-//   QMC5883_ODR_30HZ = (5 << 2),
-//   QMC5883_ODR_75HZ = (6 << 2), // <= default
-// } qmc5883_odr_t;
 
 typedef enum: uint8_t {
   QMC5883_ODR_10HZ = (0 << 2),
@@ -70,21 +50,12 @@ typedef enum: uint8_t {
   QMC5883_ODR_200HZ = (3 << 2), // <= default
 } qmc5883_odr_t;
 
-// typedef enum: uint8_t {
-//   QMC5883_1_SAMP_AVE = (0 << 5),
-//   QMC5883_2_SAMP_AVE = (1 << 5), // <= default
-//   QMC5883_4_SAMP_AVE = (2 << 5),
-//   QMC5883_8_SAMP_AVE = (3 << 5),
-// } qmc5883_sample_t;
-
 typedef enum: uint8_t {
   QMC5883_512_OSR = (0 << 6),
   QMC5883_256_OSR = (1 << 6), // <= default
   QMC5883_128_OSR = (2 << 6),
   QMC5883_64_OSR = (3 << 6),
 } qmc5883_sample_t;
-
-// #define QMC5883_BUFFER_SIZE 6
 
 
 qmc5883_io_t *qmc5883_init(interface_t type, uint8_t port, qmc5883_range_t range) {
@@ -230,3 +201,31 @@ qmc5883_t qmc5883_read(qmc5883_io_t *hw) {
 
   return ret;
 }
+
+// QMC5883L I2C address and register definitions
+
+// #define QMC5883L_CONFIG_A_REG 0x00
+// #define QMC5883L_CONFIG_B_REG 0x01
+// #define QMC5883L_MODE_REG 0x02
+// #define QMC5883L_DATA_X_MSB 0x03
+// #define QMC5883L_DATA_X_MSB 0x00
+// #define QMC5883L_STATUS_REG 0x09
+
+// typedef enum: uint8_t {
+//   QMC5883_MODE_NORMAL = 0, // <= default
+//   QMC5883_MODE_POS_BIAS = 1,
+//   QMC5883_MODE_NEG_BIAS = 2
+// } qmc5883_mode_t;
+
+// typedef enum: uint8_t {
+//   QMC5883_ODR_15HZ = (4 << 2),
+//   QMC5883_ODR_30HZ = (5 << 2),
+//   QMC5883_ODR_75HZ = (6 << 2), // <= default
+// } qmc5883_odr_t;
+
+// typedef enum: uint8_t {
+//   QMC5883_1_SAMP_AVE = (0 << 5),
+//   QMC5883_2_SAMP_AVE = (1 << 5), // <= default
+//   QMC5883_4_SAMP_AVE = (2 << 5),
+//   QMC5883_8_SAMP_AVE = (3 << 5),
+// } qmc5883_sample_t;

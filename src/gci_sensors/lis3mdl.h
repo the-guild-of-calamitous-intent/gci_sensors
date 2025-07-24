@@ -24,13 +24,6 @@ typedef enum : uint8_t {
   LIS3MDL_RANGE_16GAUSS = 0x60
 } lis3mdl_range_t;
 
-// typedef enum {
-//   LIS3MDL_LP  = 0x00,
-//   LIS3MDL_MP  = 0x01,
-//   LIS3MDL_HIP = 0x02,
-//   LIS3MDL_UHP = 0x03
-// } lis3mdl_pwr_t;
-
 typedef enum : uint8_t {
   LIS3MDL_ODR_155HZ  = 3, // LIS3MDL_UHP, // 3
   LIS3MDL_ODR_300HZ  = 2, // LIS3MDL_HIP, // 2
@@ -68,6 +61,13 @@ bool lis3mdl_ready(lis3mdl_io_t *hw);
 #if defined __cplusplus
 }
 #endif
+
+// typedef enum {
+//   LIS3MDL_LP  = 0x00,
+//   LIS3MDL_MP  = 0x01,
+//   LIS3MDL_HIP = 0x02,
+//   LIS3MDL_UHP = 0x03
+// } lis3mdl_pwr_t;
 
 // typedef struct {
 //   i2c_inst_t *i2c;

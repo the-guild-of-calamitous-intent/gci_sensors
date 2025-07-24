@@ -34,16 +34,6 @@ extern "C" {
 constexpr uint8_t BMP390_ADDRESS       = 0x77;
 constexpr uint8_t BMP390_ADDRESS_ALT   = 0x76;
 
-// constexpr uint8_t BMP390_IIR_DISABLE   = 0x00; // 000 0   1 step lag
-// constexpr uint8_t BMP390_IIR_COEFF_OFF = 0x00; // 000 0   1 step lag
-// constexpr uint8_t BMP390_IIR_COEFF_1   = 0x02; // 001 0  10 step lag
-// constexpr uint8_t BMP390_IIR_COEFF_3   = 0x04; // 010 0  20 step lag
-// constexpr uint8_t BMP390_IIR_COEFF_7   = 0x06; // 011 0  40 step lag
-// constexpr uint8_t BMP390_IIR_COEFF_15  = 0x08; // 100 0
-// constexpr uint8_t BMP390_IIR_COEFF_31  = 0x0A; // 101 0
-// constexpr uint8_t BMP390_IIR_COEFF_63  = 0x0C; // 110 0
-// constexpr uint8_t BMP390_IIR_COEFF_127 = 0x0E; // 111 0
-
 typedef enum: uint8_t {
   BMP390_IIR_DISABLE   = 0x00, // 000 0   1 step lag
   BMP390_IIR_COEFF_OFF = 0x00, // 000 0   1 step lag
@@ -55,13 +45,6 @@ typedef enum: uint8_t {
   BMP390_IIR_COEFF_63  = 0x0C, // 110 0
   BMP390_IIR_COEFF_127 = 0x0E // 111 0
 } bmp390_iir_t;
-
-// // datasheet Table 45, p 38 oversample hz
-// constexpr uint8_t BMP390_ODR_200_HZ   = 0x00;
-// constexpr uint8_t BMP390_ODR_100_HZ   = 0x01;
-// constexpr uint8_t BMP390_ODR_50_HZ    = 0x02;
-// constexpr uint8_t BMP390_ODR_25_HZ    = 0x03;
-// constexpr uint8_t BMP390_ODR_12_5_HZ  = 0x04;
 
 typedef enum: uint8_t {
   BMP390_ODR_200_HZ   = 0x00,
@@ -147,3 +130,21 @@ bool bmp390_ready(bmp390_io_t *hw);
 //   bmp3_reg_calib_data calib;
 //   uint8_t buffer[LEN_P_T_DATA];
 // } bmp390_i2c_t;
+
+
+// constexpr uint8_t BMP390_IIR_DISABLE   = 0x00; // 000 0   1 step lag
+// constexpr uint8_t BMP390_IIR_COEFF_OFF = 0x00; // 000 0   1 step lag
+// constexpr uint8_t BMP390_IIR_COEFF_1   = 0x02; // 001 0  10 step lag
+// constexpr uint8_t BMP390_IIR_COEFF_3   = 0x04; // 010 0  20 step lag
+// constexpr uint8_t BMP390_IIR_COEFF_7   = 0x06; // 011 0  40 step lag
+// constexpr uint8_t BMP390_IIR_COEFF_15  = 0x08; // 100 0
+// constexpr uint8_t BMP390_IIR_COEFF_31  = 0x0A; // 101 0
+// constexpr uint8_t BMP390_IIR_COEFF_63  = 0x0C; // 110 0
+// constexpr uint8_t BMP390_IIR_COEFF_127 = 0x0E; // 111 0
+
+// // datasheet Table 45, p 38 oversample hz
+// constexpr uint8_t BMP390_ODR_200_HZ   = 0x00;
+// constexpr uint8_t BMP390_ODR_100_HZ   = 0x01;
+// constexpr uint8_t BMP390_ODR_50_HZ    = 0x02;
+// constexpr uint8_t BMP390_ODR_25_HZ    = 0x03;
+// constexpr uint8_t BMP390_ODR_12_5_HZ  = 0x04;

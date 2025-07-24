@@ -11,8 +11,6 @@
 extern "C" {
 #endif
 
-// constexpr float M_PIf   = 3.14159265358979323846f;
-
 #ifndef __PIN__
   #define __PIN__
 typedef uint32_t pin_t;
@@ -31,6 +29,13 @@ typedef struct {
   int16_t x, y, z;
 } vec3s_t;
 #endif
+
+#if defined __cplusplus
+}
+#endif
+
+
+// constexpr float M_PIf   = 3.14159265358979323846f;
 
 // typedef struct {
 //   float x, y, z;
@@ -53,7 +58,3 @@ typedef struct {
 //     float x, y, z;
 //   };
 // } vector3_t;
-
-#if defined __cplusplus
-}
-#endif

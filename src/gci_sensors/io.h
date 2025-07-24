@@ -47,14 +47,6 @@ comm_interface_t *comm_interface_init(uint8_t port, uint8_t addr_cs,
                                       interface_t type);
 
 // --- I2C Implementation ---------------------------------
-// typedef enum {
-//   I2C_INVALID_SCL_PIN   = -1,
-//   I2C_INVALID_SDA_PIN   = -2,
-//   I2C_INVALID_PORT  = -3,
-//   I2C_PTR_NULL      = -4,
-//   I2C_UNINITIALIZED = -99
-// } i2c_errors_t;
-
 typedef struct {
   i2c_inst_t *i2c;
   uint8_t addr;
@@ -98,3 +90,11 @@ void gcis_spi_init_cs(pin_t cs, spi_cs_t opt);
 //     <0: error
 int spi_write(void *config, uint8_t reg, const uint8_t *data, size_t len);
 int spi_read(void *config, uint8_t reg, uint8_t *data, size_t len);
+
+// typedef enum {
+//   I2C_INVALID_SCL_PIN   = -1,
+//   I2C_INVALID_SDA_PIN   = -2,
+//   I2C_INVALID_PORT  = -3,
+//   I2C_PTR_NULL      = -4,
+//   I2C_UNINITIALIZED = -99
+// } i2c_errors_t;

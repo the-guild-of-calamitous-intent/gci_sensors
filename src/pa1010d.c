@@ -24,12 +24,6 @@ pa1010d_io_t *pa1010d_i2c_init(uint32_t port) {
   return hw;
 }
 
-// int32_t pa1010d_write(pa1010d_i2c_t* hw, char command[], uint32_t cmd_size) {
-//   return i2c_write_blocking(i2c, addr, (uint8_t*)command, cmd_size, false);
-//   // return writeRegister(addr, cmd_size, (uint8_t*)command) ? 0 : 1;
-//   // return gci_i2c_write(hw->i2c, hw->addr, REG_ODR, &odr, 1);
-// }
-
 int32_t pa1010d_write(pa1010d_io_t *hw, const uint8_t *command, uint16_t cmd_size) {
   comm_interface_t *comm = hw->comm;
   // return i2c_write_blocking(hw->i2c, hw->addr, command, cmd_size, false);
@@ -78,6 +72,12 @@ int32_t pa1010d_read(pa1010d_io_t *hw, char buff[], const uint16_t buff_size) {
   }
   return -1; // how get here?
 }
+
+// int32_t pa1010d_write(pa1010d_i2c_t* hw, char command[], uint32_t cmd_size) {
+//   return i2c_write_blocking(i2c, addr, (uint8_t*)command, cmd_size, false);
+//   // return writeRegister(addr, cmd_size, (uint8_t*)command) ? 0 : 1;
+//   // return gci_i2c_write(hw->i2c, hw->addr, REG_ODR, &odr, 1);
+// }
 
 // pa1010d_i2c_t *pa1010d_i2c_init(uint32_t port, uint8_t addr) {
 //   uint8_t id = 0;

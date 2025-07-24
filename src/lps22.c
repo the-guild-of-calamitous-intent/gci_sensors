@@ -22,17 +22,6 @@ References:
 #define LPS22_CTRL_REG1_LPFP_DISABLE (1 << 2)
 #define LPS22_CTRL_REG1_LPFP_DIV_9 (2 << 2)
 #define LPS22_CTRL_REG1_LPFP_DIV_20 (3 << 2)
-
-// #define LPS22_INT_SOURCE_PH 0x01
-// #define LPS22_INT_SOURCE_PL 0x02
-// #define LPS22_INT_SOURCE_IA 0x04
-// #define LPS22_INT_SOURCE_BOOT_ON 0x80
-
-// #define LPS22_STATUS_P_DA 0x01
-// #define LPS22_STATUS_T_DA 0x02
-// #define LPS22_STATUS_P_OR 0x10
-// #define LPS22_STATUS_T_OR 0x20
-
 #define LPS22_CTRL_REG2_ONESHOT 0x01
 #define LPS22_CTRL_REG2_SWRESET (1 << 2)
 #define LPS22_CTRL_REG2_I2C_DIS (1 << 3)
@@ -162,3 +151,14 @@ lps22_t lps22_read(lps22_io_t *hw) {
 
 //   return hw;
 // }
+
+
+// #define LPS22_INT_SOURCE_PH 0x01
+// #define LPS22_INT_SOURCE_PL 0x02
+// #define LPS22_INT_SOURCE_IA 0x04
+// #define LPS22_INT_SOURCE_BOOT_ON 0x80
+
+// #define LPS22_STATUS_P_DA 0x01
+// #define LPS22_STATUS_T_DA 0x02
+// #define LPS22_STATUS_P_OR 0x10
+// #define LPS22_STATUS_T_OR 0x20
