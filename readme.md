@@ -2,27 +2,42 @@
 
 > Another re-write of my code base, but this time from
 > C++ to C23. I am using C23 because it brings in some
-> nice things like `constexpr`
+> nice things like `constexpr` [1]
+
+[1]: https://en.cppreference.com/w/c/language/constexpr.html
+
+## Running
+
+- [Pi Pico Pinout](https://pico.pinout.xyz/)
+- [Pico Examples](https://github.com/raspberrypi/pico-examples)
+
+```
+flash-pico <filename>.uf2
+screen /dev/tty.usbmodemxxxx # ctrl-a ctrl-d to exit
+```
 
 ## Sensors
 
 - Accel/Gyro
-  - LSM6DSOX
+  - LSM6DSOX or LSM6DSO (no ML core)
 - Magnetometer
   - LIS3MDL
+  - QMC5883L
 - GPS
-  - PA1010D
+  - PA1010D (I2C only)
 - Pressure/Temperature
   - BMP390
+  - LPS22
 
-All sensors basically have these funtions available to them:
+All sensors have a simple interface:
 
 ```c
-sensor_i2c_t* sensor_i2c_init(sensor_i2c_t*, uint32_t address, ...)
-sensor_t sensor_i2c_read(sensor_i2c_t*)
-bool sensor_reboot(sensor_i2c_t*)
-bool sensor_ready(sensor_i2c_t*)
-int32_t sensor_available(sensor_i2c_t*)
+// return: NULL - error
+//         senosr_io_t - success
+sensor_io_t* gcis_[spi,i2c]_init(uint8_t port, uint8_t address, ...);
+sensor_t sensor_read(sensor_io_t* hw);
+int32_t sensor_write(sensor_io_t* hw, uint8_t reg, uint8_t* buffer, uint8_t length);
+// others as needed ...
 ```
 
 ## Units
@@ -38,6 +53,36 @@ int32_t sensor_available(sensor_i2c_t*)
 | Lat/Lon     | decimal degrees | deg
 | Rate        | hertz           | Hz
 | Time        | seconds         | sec
+
+## Generic API
+
+- Naming convention
+  - `<sensor>_t` is the output, contains sensor readings
+  - `<sensor>_io_t` is the generic information to interface
+    with the sensor via I2C or SPI
+    - Errors are captured in each `<sensor>_io_t`
+      - `bool ok`: true-ok, false-error
+      - `int errnum`: error number
+  - Functions are generally named `return_type <sensor>_<action>(args)`
+    - `<action>`s can be `init`, `read`, `write`, etc
+    - `return_type` can be `int`, `void`, `<sensor>_t`, etc
+    - `int` return is typically:
+      - `0`: success
+      - `>0`: success or baudrate or data read/written
+      - `<0`: error
+
+## ToDo
+
+- [ ] Make I2C or SPI interface for all sensors
+  - [ ] bmp390
+  - [ ] lps22
+  - [ ] lsm6dsox
+  - [ ] pa1010d
+  - [ ] qmc5883l
+- [ ] Add a `<sensor>_setmode(...)` for sensors
+- [ ] For completeness, add a `<sensor>_free(...)` for sensors
+- [x] Remove external libraries
+- [ ] Add linux support
 
 # MIT License
 

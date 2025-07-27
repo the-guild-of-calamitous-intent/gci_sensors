@@ -1,22 +1,24 @@
 
-#include "pa1010d.h"
-#include "pmtk.h"
+#include "gci_sensors/pa1010d.h"
+#include "gci_sensors/pmtk.h"
 #include <hardware/gpio.h>
 #include <pico/binary_info.h>
 #include <pico/stdlib.h>
-#include <picolibc.h>
 #include <stdio.h>
+#include <tusb.h> // wait for USB
 
-constexpr pin_t i2c_scl = 1;
-constexpr pin_t i2c_sda = 0;
+#define i2c_scl 1
+#define i2c_sda 0
 
 int main() {
   stdio_init_all();
-  wait_for_usb();
+  while (!tud_cdc_connected()) {
+    sleep_ms(100);
+  }
 
-  int32_t speed = gci_i2c0_bus_init(I2C_400KHZ, i2c_sda, i2c_scl);
+  int32_t speed = gcis_i2c_bus_init(0, GCIS_I2C_400KHZ, i2c_sda, i2c_scl);
 
-  pa1010d_i2c_t *gps = pa1010d_i2c_init(0, PA1010D_ADDRESS);
+  pa1010d_io_t *gps = pa1010d_i2c_init(0);
 
   printf(">> i2c instance: %u baud: %u\n", 0, speed);
   printf(">> i2c SDA: %u SCL: %u\n", i2c_sda, i2c_scl);
