@@ -47,8 +47,8 @@ LPF2 ODR [Hz] | Cutoff [Hz]
 ```
             |HP_EN_G|            |LPF1_SEL_G|
 GYRO ADC -+->|  0    | --------+->|    0     | ---------+-> LPF2 -> SPI/I2C
-        |  |       |         |  |          |          |
-        +->|  1    | -> HPF -+  |    1     | -> LPF1 -+
+          |  |       |         |  |          |          |
+          +->|  1    | -> HPF -+  |    1     | -> LPF1 -+
 ```
 
 ACCEL Filtering (Fig 16 & 17)
@@ -59,6 +59,6 @@ controlled by HPCF_XL
 ```
                         |LPF2_XL_EN|
 AALPF -> ADC -> LPF1 -+->|    0     | ---------+-> SPI/I2C
-                    |  |          |          |
-                    +->|    1     | -> LPF2 -+
+                      |  |          |          |
+                      +->|    1     | -> LPF2 -+
 ```
