@@ -42,8 +42,8 @@ int main() {
   }
 
   uint32_t speed = gcis_spi0_init(GCIS_SPI_1MHZ, RX, TX, SCK);
-  gcis_spi_init_cs(CS, SPI_CS_PULLDOWN);
-  gcis_spi_init_cs(EXT, 0);
+  // gcis_spi_init_cs(CS, SPI_CS_PULLDOWN);
+  // gcis_spi_init_cs(EXT, 0);
 
   printf(">> spi instance: %u baudrate: %u\n", 0, speed);
   printf(">> spi SDI(RX): %u SDO(TX): %u SCK: %u CS: %u\n", RX, TX, SCK, CS);

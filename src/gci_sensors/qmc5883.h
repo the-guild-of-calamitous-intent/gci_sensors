@@ -1,8 +1,8 @@
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
 #include "gci_sensors/io.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 #if defined __cplusplus
 extern "C" {
@@ -10,7 +10,7 @@ extern "C" {
 
 #define QMC5883_BUFFER_SIZE 6
 
-typedef enum: uint8_t {
+typedef enum : uint8_t {
   QMC5883_2GAUSS = (0 << 4),
   QMC5883_8GAUSS = (1 << 4),
 } qmc5883_range_t;
@@ -36,7 +36,6 @@ qmc5883_t qmc5883_read(qmc5883_io_t *hw);
 #if defined __cplusplus
 }
 #endif
-
 
 // // QMC5883L I2C address and register definitions
 // #define QMC5883L_ADDR 0x1E

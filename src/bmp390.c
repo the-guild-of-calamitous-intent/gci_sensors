@@ -3,13 +3,12 @@
 #include <stdlib.h> // calloc
 #include <string.h> // memcpy
 
-
-constexpr uint8_t BMP390_OVERSAMPLING_1X      = 0x00;
-constexpr uint8_t BMP390_OVERSAMPLING_2X      = 0x01;
-constexpr uint8_t BMP390_OVERSAMPLING_4X      = 0x02;
-constexpr uint8_t BMP390_OVERSAMPLING_8X      = 0x03;
-constexpr uint8_t BMP390_OVERSAMPLING_16X     = 0x04;
-constexpr uint8_t BMP390_OVERSAMPLING_32X     = 0x05;
+constexpr uint8_t BMP390_OVERSAMPLING_1X  = 0x00;
+constexpr uint8_t BMP390_OVERSAMPLING_2X  = 0x01;
+constexpr uint8_t BMP390_OVERSAMPLING_4X  = 0x02;
+constexpr uint8_t BMP390_OVERSAMPLING_8X  = 0x03;
+constexpr uint8_t BMP390_OVERSAMPLING_16X = 0x04;
+constexpr uint8_t BMP390_OVERSAMPLING_32X = 0x05;
 
 static constexpr uint8_t REG_WHO_AM_I   = 0x00;
 static constexpr uint8_t REG_ERR        = 0x02;

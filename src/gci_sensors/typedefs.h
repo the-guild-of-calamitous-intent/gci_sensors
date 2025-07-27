@@ -34,7 +34,6 @@ typedef struct {
 }
 #endif
 
-
 // constexpr float M_PIf   = 3.14159265358979323846f;
 
 // typedef struct {

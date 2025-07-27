@@ -83,12 +83,10 @@ bool lis3mdl_ready(lis3mdl_io_t *hw);
 // const lis3mdl_t lis3mdl_read(lis3mdl_i2c_t *hw);
 // bool lis3mdl_ready(lis3mdl_i2c_t *hw);
 
-
 // constexpr uint8_t RANGE_4GAUSS        = 0x00; // default
 // constexpr uint8_t RANGE_8GAUSS        = 0x20;
 // constexpr uint8_t RANGE_12GAUSS       = 0x40;
 // constexpr uint8_t RANGE_16GAUSS       = 0x60;
-
 
 // constexpr uint8_t ODR_155HZ           = LIS3MDL_UHP; // 3
 // constexpr uint8_t ODR_300HZ           = LIS3MDL_HIP; // 2

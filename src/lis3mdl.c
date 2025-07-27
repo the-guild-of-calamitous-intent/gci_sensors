@@ -5,8 +5,6 @@
 // static constexpr uint32_t READ_MAG      = 6;
 // static constexpr uint32_t READ_MAG_TEMP = 8;
 
-
-
 static constexpr uint8_t REG_WHO_AM_I   = 0x0F;
 static constexpr uint8_t REG_CTRL_REG1  = 0x20;
 static constexpr uint8_t REG_CTRL_REG2  = 0x21;

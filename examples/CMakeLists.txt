@@ -1,12 +1,13 @@
 LIST(APPEND examples
     sox_spi
-    sox_i2c
-    bmp
-    lis3
-    gps
-    interrupt
-    lps22_spi
-    qmc5883_i2c
+    # sox_spi_core1
+    # sox_i2c
+    # bmp
+    # lis3
+    # gps
+    # interrupt
+    # lps22_spi
+    # qmc5883_i2c
 )
 
 foreach(app ${examples})

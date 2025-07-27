@@ -16,18 +16,19 @@ comm_interface_t *comm_interface_init(uint8_t port, uint8_t addr_cs, interface_t
     comm->config = config;
   }
   else {
+    const pin_t pin      = addr_cs;
     spi_config_t *config = (spi_config_t *)calloc(1, sizeof(spi_config_t));
     if (config == NULL) return NULL;
     config->spi    = (port == 0) ? spi0 : spi1;
-    config->cs_pin = addr_cs;
+    config->cs_pin = pin;
     comm->read     = spi_read;
     comm->write    = spi_write;
     comm->config   = config;
 
     // Chip select is active-low, initialise it to a driven-high state
-    gpio_init(addr_cs);
-    gpio_set_dir(addr_cs, GPIO_OUT);
-    gpio_put(addr_cs, 1);
+    gpio_init(pin);
+    gpio_set_dir(pin, GPIO_OUT);
+    gpio_put(pin, 1);
   }
 
   return comm;

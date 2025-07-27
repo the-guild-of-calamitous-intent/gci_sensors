@@ -152,7 +152,6 @@ lps22_t lps22_read(lps22_io_t *hw) {
 //   return hw;
 // }
 
-
 // #define LPS22_INT_SOURCE_PH 0x01
 // #define LPS22_INT_SOURCE_PL 0x02
 // #define LPS22_INT_SOURCE_IA 0x04

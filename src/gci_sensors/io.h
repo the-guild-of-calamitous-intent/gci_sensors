@@ -11,7 +11,18 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#ifndef pin_t
+// A lot of pico IO functions return PICO_ERROR_GENERIC on
+// error:
+//
+// PICO_ERROR_GENERIC = -1
+
+// #ifndef pin_t
+// #define pin_t
+// typedef uint32_t pin_t;
+// #endif
+
+#ifndef __PIN__
+  #define __PIN__
 typedef uint32_t pin_t;
 #endif
 
@@ -58,8 +69,8 @@ typedef struct {
 int i2c_write(void *config, uint8_t reg, const uint8_t *data, size_t len);
 int i2c_read(void *config, uint8_t reg, uint8_t *data, size_t len);
 
-int32_t gcis_i2c_bus_init(uint32_t port, uint32_t baud, pin_t pin_sda,
-                          pin_t pin_scl);
+int32_t gcis_i2c_bus_init(uint32_t port, uint32_t baud, pin_t sda, pin_t scl);
+void gcis_i2c_free(uint8_t port);
 
 // --- SPI Implementation ---------------------------------
 typedef enum {
@@ -78,12 +89,16 @@ typedef struct {
 
 int32_t gcis_spi_bus_init(uint8_t port, uint32_t baud, pin_t sdi, pin_t sdo,
                           pin_t sck);
+
 int32_t gcis_spi0_init(uint32_t baud, pin_t sdi, pin_t sdo, pin_t sck);
 int32_t gcis_spi1_init(uint32_t baud, pin_t sdi, pin_t sdo, pin_t sck);
 
-typedef enum { SPI_CS_NONE, SPI_CS_PULLUP, SPI_CS_PULLDOWN } spi_cs_t;
+void gcis_spi_free(uint8_t port);
 
-void gcis_spi_init_cs(pin_t cs, spi_cs_t opt);
+// typedef enum { SPI_CS_NONE, SPI_CS_PULLUP, SPI_CS_PULLDOWN } spi_cs_t;
+
+// comm_interface_init() already does this!!!
+// void gcis_spi_init_cs(pin_t cs, spi_cs_t opt);
 
 // return:
 //     >0: number bytes read/written
