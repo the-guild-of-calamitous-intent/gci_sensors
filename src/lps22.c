@@ -10,10 +10,10 @@ References:
 
 // #pragma once
 
-#include "gci_sensors/lps22.h"
 #include <math.h>
 #include <stdio.h>  // printf
 #include <stdlib.h> // calloc
+#include "gci_sensors/lps22.h"
 
 // Registers and fields
 #define LPS22_WHO_AM_I 0xB1
@@ -74,13 +74,15 @@ lps22_io_t *lps22_spi_init(uint8_t port, pin_t cs, lps22_odr_t ODR) {
   // SWRESET - reset regs to default
   reg = LPS22_CTRL_REG2_SWRESET;
   comm->write(comm->config, LPS22_CTRL_REG2, &reg, 1);
+  sleep_ms(100);
 
   uint8_t regs[3] = {
       ODR | LPS22_CTRL_REG1_LPFP_DIV_9,           // REG 1
       LPS22_CTRL_REG2_I2C_DIS | LPS22_IF_ADD_INC, // REG 2
       LPS22_CTRL_REG3_DRDY_EN                     // REG 3
   };
-  comm->write(comm->config, LPS22_CTRL_REG1, regs, 3);
+  ok = comm->write(comm->config, LPS22_CTRL_REG1, regs, 3);
+  if (ok < 0) return NULL;
 
   return hw;
 }
@@ -96,12 +98,8 @@ lps22_t lps22_read(lps22_io_t *hw) {
     return ret;
   }
 
-  int32_t p = (int32_t)sensor_data[0] | ((int32_t)sensor_data[1] << 8) | ((int32_t)sensor_data[2] << 16);
-  // 2's complement fix?
-  // if(up & 0x00800000) up |= 0xFF000000;
-  // int32_t p = (int32_t) up;
-
-  int32_t t = ((int32_t)sensor_data[3]) | ((int32_t)sensor_data[4] << 8);
+  int32_t p = (int32_t)(uint32_t)sensor_data[0] | ((uint32_t)sensor_data[1] << 8) | ((uint32_t)sensor_data[2] << 16);
+  int32_t t = (int32_t)((uint32_t)sensor_data[3]) | ((uint32_t)sensor_data[4] << 8);
 
   lps22_t ret = {
       (float)(p) / 4096.0f, // hPa

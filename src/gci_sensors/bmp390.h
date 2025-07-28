@@ -86,6 +86,7 @@ typedef struct {
   float pressure;
   float temperature;
 } bmp390_t;
+
 typedef struct {
   comm_interface_t *comm;
   // uint8_t addr;

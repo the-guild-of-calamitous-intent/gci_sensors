@@ -40,10 +40,12 @@ static constexpr uint8_t INT_LEVEL_HI = (1 << 1); // 1 = active high
 // latch int pin and status reg ... do I need this?
 static constexpr uint8_t INT_LATCH_EN = (1 << 2);
 
+
+// FIXME: put this in io.h
 static inline uint32_t to_24b(uint8_t *b) {
   return (uint32_t)b[0] | (uint32_t)b[1] << 8 | (uint32_t)b[2] << 16;
 }
-
+// FIXME: replace with cov_bb2f ... like lsb/msb better
 static inline uint16_t to_16b(uint8_t msb, uint8_t lsb) {
   return ((uint16_t)msb << 8) | (uint16_t)lsb;
 }

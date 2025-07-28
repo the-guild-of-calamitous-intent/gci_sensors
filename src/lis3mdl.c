@@ -1,6 +1,6 @@
-#include "gci_sensors/lis3mdl.h"
 #include <stdint.h>
 #include <string.h> // memcpy
+#include "gci_sensors/lis3mdl.h"
 
 // static constexpr uint32_t READ_MAG      = 6;
 // static constexpr uint32_t READ_MAG_TEMP = 8;
@@ -52,17 +52,16 @@ static lis3mdl_io_t *lis3mdl_init(interface_t type, uint8_t port, uint8_t addr_c
   uint8_t id = 0;
   int32_t ok;
   uint8_t cmd;
-  float sm[12] = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
 
   lis3mdl_io_t *hw = (lis3mdl_io_t *)calloc(1, sizeof(lis3mdl_io_t));
   if (hw == NULL) return NULL;
 
-  // comm_interface_t *comm = (comm_interface_t*) calloc(1, sizeof(comm_interface_t));
   comm_interface_t *comm = comm_interface_init(port, addr_cs, type);
   if (comm == NULL) return NULL;
 
   hw->comm = comm;
 
+  float sm[12] = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
   memcpy(hw->sm, sm, 12 * sizeof(float));
 
   // 1 g = 0.0001 T = 0.1 mT = 100 uT = 100,000 nT
@@ -84,47 +83,62 @@ static lis3mdl_io_t *lis3mdl_init(interface_t type, uint8_t port, uint8_t addr_c
     break;
   }
 
-  // readRegister(REG_WHO_AM_I, &id);
-  // ok = gci_i2c_read(hw->i2c, hw->addr, REG_WHO_AM_I, &id, 1);
   ok = comm->read(comm->config, REG_WHO_AM_I, &id, 1);
   if (ok < 0) return NULL;
   if (id != WHO_AM_I) return NULL; // ERROR_WHOAMI;
 
-  // uint8_t reg1 = LIS3MDL_FAST_ODR_EN | LIS3MDL_TEMP_EN | (odr << 5);
-  // if (!writeRegister(REG_CTRL_REG1, reg1))
-  //   return ERROR_REG1; // enable x/y-axis, temp
-  // uint8_t reg1 = LIS3MDL_FAST_ODR_EN | LIS3MDL_TEMP_EN | (odr << 5);
-  cmd = LIS3MDL_FAST_ODR_EN | (odr << 5);
-  // ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL_REG1, &cmd, 1);
-  ok = comm->write(comm->config, REG_CTRL_REG1, &cmd, 1);
-  if (ok < 0) return NULL;
-
-  // if (!writeRegister(REG_CTRL_REG2, range)) return ERROR_REG2; // set range
-  cmd = range;
-  // ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL_REG2, &cmd, 1);
+  // clear memory
+  cmd = 0x04; // SOFT_RESET
   ok = comm->write(comm->config, REG_CTRL_REG2, &cmd, 1);
   if (ok < 0) return NULL;
+  sleep_ms(100);
 
-  // if (!writeRegister(REG_CTRL_REG3, 0x00))
-  //   return ERROR_REG3; // continuous sampling
-  cmd = 0x00;
-  // ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL_REG3, &cmd, 1);
-  ok = comm->write(comm->config, REG_CTRL_REG3, &cmd, 1);
+  uint8_t data[5] = {
+    LIS3MDL_FAST_ODR_EN | (odr << 5), // CTRL1, set x,y ODR
+    range,                            // CTRL2
+    0x00,                             // CTRL3, hi pwr, continous sample
+    (odr << 2),                       // CTRL4, z ODR
+    0x00                              // CTRL5, BDU(0x40)
+  };
+
+  ok = comm->write(comm->config, REG_CTRL_REG1, data, 5);
   if (ok < 0) return NULL;
 
-  // uint8_t reg4 = (odr << 2);
-  // if (!writeRegister(REG_CTRL_REG4, reg4)) return ERROR_REG4; // enable z-axis
-  cmd = (odr << 2);
-  // ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL_REG4, &cmd, 1);
-  ok = comm->write(comm->config, REG_CTRL_REG4, &cmd, 1);
-  if (ok < 0) return NULL;
+  // // uint8_t reg1 = LIS3MDL_FAST_ODR_EN | LIS3MDL_TEMP_EN | (odr << 5);
+  // // if (!writeRegister(REG_CTRL_REG1, reg1))
+  // //   return ERROR_REG1; // enable x/y-axis, temp
+  // // uint8_t reg1 = LIS3MDL_FAST_ODR_EN | LIS3MDL_TEMP_EN | (odr << 5);
+  // cmd = LIS3MDL_FAST_ODR_EN | (odr << 5);
+  // // ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL_REG1, &cmd, 1);
+  // ok = comm->write(comm->config, REG_CTRL_REG1, &cmd, 1);
+  // if (ok < 0) return NULL;
 
-  // if (!writeRegister(REG_CTRL_REG5, 0x00))
-  //   return NULL; //ERROR_REG5; // continuous sampling / no fast read
-  cmd = 0x00;
-  // ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL_REG5, &cmd, 1);
-  ok = comm->write(comm->config, REG_CTRL_REG5, &cmd, 1);
-  if (ok < 0) return NULL;
+  // // if (!writeRegister(REG_CTRL_REG2, range)) return ERROR_REG2; // set range
+  // cmd = range;
+  // // ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL_REG2, &cmd, 1);
+  // ok = comm->write(comm->config, REG_CTRL_REG2, &cmd, 1);
+  // if (ok < 0) return NULL;
+
+  // // if (!writeRegister(REG_CTRL_REG3, 0x00))
+  // //   return ERROR_REG3; // continuous sampling
+  // cmd = 0x00;
+  // // ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL_REG3, &cmd, 1);
+  // ok = comm->write(comm->config, REG_CTRL_REG3, &cmd, 1);
+  // if (ok < 0) return NULL;
+
+  // // uint8_t reg4 = (odr << 2);
+  // // if (!writeRegister(REG_CTRL_REG4, reg4)) return ERROR_REG4; // enable z-axis
+  // cmd = (odr << 2);
+  // // ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL_REG4, &cmd, 1);
+  // ok = comm->write(comm->config, REG_CTRL_REG4, &cmd, 1);
+  // if (ok < 0) return NULL;
+
+  // // if (!writeRegister(REG_CTRL_REG5, 0x00))
+  // //   return NULL; //ERROR_REG5; // continuous sampling / no fast read
+  // cmd = 0x00;
+  // // ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL_REG5, &cmd, 1);
+  // ok = comm->write(comm->config, REG_CTRL_REG5, &cmd, 1);
+  // if (ok < 0) return NULL;
 
   return hw;
 }
@@ -160,22 +174,35 @@ bool lis3mdl_reboot(lis3mdl_io_t *hw) {
   return true;
 }
 
+// static inline float cov_bb2f(uint8_t lo, uint8_t hi) {
+//   return (float)((int16_t)((uint16_t)hi << 8) | lo);
+// }
+
 const lis3mdl_t lis3mdl_read(lis3mdl_io_t *hw) {
-  int32_t ok;
-  lis3mdl_t ret          = {0.0f, 0.0f, 0.0f};
   comm_interface_t *comm = hw->comm;
+  lis3mdl_t ret          = {0.0f, 0.0f, 0.0f};
+  int32_t ok = 0;
   hw->ok                 = false;
+
+  // uint8_t buf[MAG_BUFFER_SIZE];
+  uint8_t *buf = hw->buffer;
 
   // if (lis3mdl_ready(hw) == false) return ret;
 
   // if (!readRegisters(REG_OUT_X_L, READ_MAG, buff.b)) return ret;
   // ok = gci_i2c_read(hw->i2c, hw->addr, REG_OUT_X_L, hw->buff.b, MAG_BUFFER_SIZE);
-  ok = comm->read(comm->config, REG_OUT_X_L, hw->buff.b, MAG_BUFFER_SIZE);
+  // ok = comm->read(comm->config, REG_OUT_X_L, hw->buff.b, MAG_BUFFER_SIZE);
+  ok = comm->read(comm->config, REG_OUT_X_L, buf, MAG_BUFFER_SIZE);
   if (ok < 0) return ret;
 
-  ret.x = hw->scale * (float)hw->buff.s.x; // gauss
-  ret.y = hw->scale * (float)hw->buff.s.y;
-  ret.z = hw->scale * (float)hw->buff.s.z;
+
+  ret.x = hw->scale * cov_bb2f(buf[0], buf[1]); // gauss
+  ret.y = hw->scale * cov_bb2f(buf[2], buf[3]);
+  ret.z = hw->scale * cov_bb2f(buf[4], buf[5]);
+
+  // ret.x = hw->scale * (float)hw->buff.s.x; // gauss
+  // ret.y = hw->scale * (float)hw->buff.s.y;
+  // ret.z = hw->scale * (float)hw->buff.s.z;
 
   // BROKEN????
   // ((float_t)lsb / 8.0f) + (25.0f);

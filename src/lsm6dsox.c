@@ -235,9 +235,9 @@ void lsm6dsox_dump(lsm6dsox_io_t *hw) {
   }
 }
 
-static inline float cov(uint8_t lo, uint8_t hi) {
-  return (float)((int16_t)((uint16_t)hi << 8) | lo);
-}
+// static inline float cov(uint8_t lo, uint8_t hi) {
+//   return (float)((int16_t)((uint16_t)hi << 8) | lo);
+// }
 
 // accel - g's, gyro - dps, temp - C
 lsm6dsox_t lsm6dsox_read(lsm6dsox_io_t *hw) {
@@ -260,15 +260,15 @@ lsm6dsox_t lsm6dsox_read(lsm6dsox_io_t *hw) {
   // for (int i = 0; i < LSM6DSOX_BUFFER_SIZE; ++i)
   //   printf("buff[%d]: %u\n", i, buff[i]);
 
-  ret.temperature = cov(buff[0], buff[1]) * TEMP_SCALE + 25.0f;
+  ret.temperature = cov_bb2f(buff[0], buff[1]) * TEMP_SCALE + 25.0f;
 
-  ret.g.x = gs * cov(buff[2], buff[3]);
-  ret.g.y = gs * cov(buff[4], buff[5]);
-  ret.g.z = gs * cov(buff[6], buff[7]);
+  ret.g.x = gs * cov_bb2f(buff[2], buff[3]);
+  ret.g.y = gs * cov_bb2f(buff[4], buff[5]);
+  ret.g.z = gs * cov_bb2f(buff[6], buff[7]);
 
-  ret.a.x = as * cov(buff[8], buff[9]);
-  ret.a.y = as * cov(buff[10], buff[11]);
-  ret.a.z = as * cov(buff[12], buff[13]);
+  ret.a.x = as * cov_bb2f(buff[8], buff[9]);
+  ret.a.y = as * cov_bb2f(buff[10], buff[11]);
+  ret.a.z = as * cov_bb2f(buff[12], buff[13]);
 
   // ret.temperature = (float)((int16_t)((uint16_t)buff[1] << 8) | buff[0]) * TEMP_SCALE + 25.0f;
 
