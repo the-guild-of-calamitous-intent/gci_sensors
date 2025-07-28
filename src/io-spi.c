@@ -19,13 +19,13 @@ int32_t gcis_spi_bus_init(
     valid_sdi = (1 << 0) | (1 << 4) | (1 << 16) | (1 << 20);
     valid_sck = (1 << 2) | (1 << 6) | (1 << 18);
     valid_sdo = (1 << 3) | (1 << 7) | (1 << 19);
-    spi = spi0;
+    spi       = spi0;
   }
   else if (port == 1) {
     valid_sdi = (1 << 8) | (1 << 12) | (1 << 28);
     valid_sck = (1 << 10) | (1 << 14) | (1 << 26);
     valid_sdo = (1 << 11) | (1 << 15) | (1 << 27);
-    spi = spi1;
+    spi       = spi1;
   }
   else return SPI_INVALID_PORT;
 
@@ -92,7 +92,6 @@ int spi_read(void *config, uint8_t reg, uint8_t *data, size_t len) {
   gpio_put(cfg->cs_pin, SPI_DEACTIVATE); // CS high
   return ret;
 }
-
 
 // typedef struct {
 //   pin_t sdi;

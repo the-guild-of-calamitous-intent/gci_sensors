@@ -51,22 +51,22 @@ static lsm6dsox_io_t *lsm6dsox_init(interface_t type, uint8_t port, uint8_t addr
   // hw->ok = true;
   // return hw;
 
-  if (accel_range == LSM6DSOX_ACCEL_RANGE_2_G) hw->a_scale = 2.0f / 32768.0f;
-  else if (accel_range == LSM6DSOX_ACCEL_RANGE_4_G) hw->a_scale = 4.0f / 32768.0f;
-  else if (accel_range == LSM6DSOX_ACCEL_RANGE_8_G) hw->a_scale = 8.0f / 32768.0f;
-  else if (accel_range == LSM6DSOX_ACCEL_RANGE_16_G) hw->a_scale = 16.0f / 32768.0f;
+  if (accel_range == LSM6DSOX_XL_2_G) hw->a_scale = 2.0f / 32768.0f;
+  else if (accel_range == LSM6DSOX_XL_4_G) hw->a_scale = 4.0f / 32768.0f;
+  else if (accel_range == LSM6DSOX_XL_8_G) hw->a_scale = 8.0f / 32768.0f;
+  else if (accel_range == LSM6DSOX_XL_16_G) hw->a_scale = 16.0f / 32768.0f;
   else {
-    hw->errnum = LSM6DSOX_ERROR_ACCEL_RANGE;
+    hw->errnum = LSM6DSOX_ERROR_XL;
     return hw;
   }
 
-  if (gyro_range == LSM6DSOX_GYRO_RANGE_125_DPS) hw->g_scale = 125.0f / 32768.0f;
-  else if (gyro_range == LSM6DSOX_GYRO_RANGE_250_DPS) hw->g_scale = 250.0f / 32768.0f;
-  else if (gyro_range == LSM6DSOX_GYRO_RANGE_500_DPS) hw->g_scale = 500.0f / 32768.0f;
-  else if (gyro_range == LSM6DSOX_GYRO_RANGE_1000_DPS) hw->g_scale = 1000.0f / 32768.0f;
-  else if (gyro_range == LSM6DSOX_GYRO_RANGE_2000_DPS) hw->g_scale = 2000.0f / 32768.0f;
+  if (gyro_range == LSM6DSOX_G_125_DPS) hw->g_scale = 125.0f / 32768.0f;
+  else if (gyro_range == LSM6DSOX_G_250_DPS) hw->g_scale = 250.0f / 32768.0f;
+  else if (gyro_range == LSM6DSOX_G_500_DPS) hw->g_scale = 500.0f / 32768.0f;
+  else if (gyro_range == LSM6DSOX_G_1000_DPS) hw->g_scale = 1000.0f / 32768.0f;
+  else if (gyro_range == LSM6DSOX_G_2000_DPS) hw->g_scale = 2000.0f / 32768.0f;
   else {
-    hw->errnum = LSM6DSOX_ERROR_GYRO_RANGE;
+    hw->errnum = LSM6DSOX_ERROR_G;
     return hw;
   }
 
@@ -140,17 +140,17 @@ static lsm6dsox_io_t *lsm6dsox_init(interface_t type, uint8_t port, uint8_t addr
   //                       |  |          |          |
   //                       +->|    1     | -> LPF2 -+
 
-  const uint8_t HP_EN_G    = 0x00; // G disable HPF
-  const uint8_t LPF1_SEL_G = 0x00; // G turn off LPF1, only use LPF2
-  const uint8_t LPF2_XL_EN = 0x00; // turn off LPF2 for XL
-  const uint8_t IF_INC     = 0x04; // 0x04: auto incr pointer on read reg
-  const uint8_t G_BW       = 0x03; // 0x03: FTYPE, LPF1 highest BW - Don't care, disabled
+  const uint8_t HP_EN_G    = 0x00;                            // G disable HPF
+  const uint8_t LPF1_SEL_G = 0x00;                            // G turn off LPF1, only use LPF2
+  const uint8_t LPF2_XL_EN = 0x00;                            // turn off LPF2 for XL
+  const uint8_t IF_INC     = 0x04;                            // 0x04: auto incr pointer on read reg
+  const uint8_t G_BW       = 0x03;                            // 0x03: FTYPE, LPF1 highest BW - Don't care, disabled
   const uint8_t I2C_EN     = (type == I2C_INTERFACE) ? 0 : 4; // 0: enable, 4: disable
-  const uint8_t BDU        = 0x40; // 0x00: continuous, 0x40: not updated until read
-  const uint8_t PP_OD      = 0x00; // 0x00: push-pull mode ... this is what I want
-  const uint8_t I3C_DIS    = 0x02; // 0x02: disable I3C
-  const uint8_t DEN        = 0xD0; // 0xD0: DEN ... don't use, but is default
-  const uint8_t TS_DIS     = 0x00; // timestamp EN: 0x20, DIS: 0x00
+  const uint8_t BDU        = 0x40;                            // 0x00: continuous, 0x40: not updated until read
+  const uint8_t PP_OD      = 0x00;                            // 0x00: push-pull mode ... this is what I want
+  const uint8_t I3C_DIS    = 0x02;                            // 0x02: disable I3C
+  const uint8_t DEN        = 0xD0;                            // 0xD0: DEN ... don't use, but is default
+  const uint8_t TS_DIS     = 0x00;                            // timestamp EN: 0x20, DIS: 0x00
 
   // reg 10-19
   uint8_t blk1[10] = {
@@ -201,7 +201,6 @@ bool lsm6dsox_reboot(lsm6dsox_io_t *hw) {
   return true;
 }
 
-
 void lsm6dsox_dump(lsm6dsox_io_t *hw) {
   int32_t err;
   uint8_t buff[10];
@@ -212,8 +211,8 @@ void lsm6dsox_dump(lsm6dsox_io_t *hw) {
     printf("*** Error reading FIFO_CTRL_REG ***\n");
     return;
   }
-  for (int i=0; i<8; ++i) {
-    printf("> reg[0x%02x]: 0x%02x\n", 7+i, buff[i]);
+  for (int i = 0; i < 8; ++i) {
+    printf("> reg[0x%02x]: 0x%02x\n", 7 + i, buff[i]);
   }
 
   printf("---------------------------\n");
@@ -223,14 +222,12 @@ void lsm6dsox_dump(lsm6dsox_io_t *hw) {
     printf("*** Error reading CTRL1_XL_REG ***\n");
     return;
   }
-  for (int i=0; i<10; ++i) {
-    printf("> reg[0x%02x]: 0x%02x\n", 0x10+i, buff[i]);
+  for (int i = 0; i < 10; ++i) {
+    printf("> reg[0x%02x]: 0x%02x\n", 0x10 + i, buff[i]);
   }
 }
 
-static
-inline
-float cov(uint8_t lo, uint8_t hi) {
+static inline float cov(uint8_t lo, uint8_t hi) {
   return (float)((int16_t)((uint16_t)hi << 8) | lo);
 }
 
@@ -430,16 +427,16 @@ void lsm6dsox_free(lsm6dsox_io_t *hw) {
 //   // datasheet)
 //   // kill LFP2 (default)
 //   switch (accel_range) {
-//   case ACCEL_RANGE_2_G:
+//   case XL_2_G:
 //     hw->a_scale = 2.0f / 32768.0f;
 //     break;
-//   case ACCEL_RANGE_4_G:
+//   case XL_4_G:
 //     hw->a_scale = 4.0f / 32768.0f;
 //     break;
-//   case ACCEL_RANGE_8_G:
+//   case XL_8_G:
 //     hw->a_scale = 8.0f / 32768.0f;
 //     break;
-//   case ACCEL_RANGE_16_G:
+//   case XL_16_G:
 //     hw->a_scale = 16.0f / 32768.0f;
 //     break;
 //   default:
@@ -467,11 +464,11 @@ void lsm6dsox_free(lsm6dsox_io_t *hw) {
 //   ok  = comm->write(comm->config, REG_CTRL1_XL, &cmd, 1);
 //   if (ok < 0) return NULL;
 
-//   if (gyro_range == GYRO_RANGE_125_DPS) hw->g_scale = 125.0f / 32768.0f;
-//   else if (gyro_range == GYRO_RANGE_250_DPS) hw->g_scale = 250.0f / 32768.0f;
-//   else if (gyro_range == GYRO_RANGE_500_DPS) hw->g_scale = 500.0f / 32768.0f;
-//   else if (gyro_range == GYRO_RANGE_1000_DPS) hw->g_scale = 1000.0f / 32768.0f;
-//   else if (gyro_range == GYRO_RANGE_2000_DPS) hw->g_scale = 2000.0f / 32768.0f;
+//   if (gyro_range == G_125_DPS) hw->g_scale = 125.0f / 32768.0f;
+//   else if (gyro_range == G_250_DPS) hw->g_scale = 250.0f / 32768.0f;
+//   else if (gyro_range == G_500_DPS) hw->g_scale = 500.0f / 32768.0f;
+//   else if (gyro_range == G_1000_DPS) hw->g_scale = 1000.0f / 32768.0f;
+//   else if (gyro_range == G_2000_DPS) hw->g_scale = 2000.0f / 32768.0f;
 //   else return NULL;
 
 //   // if (!writeRegister(REG_CTRL2_G, odr | gyro_range)) return ERROR_CTRL2_G;
@@ -619,16 +616,16 @@ void lsm6dsox_free(lsm6dsox_io_t *hw) {
 //   // datasheet)
 //   // kill LFP2 (default)
 //   switch (accel_range) {
-//   case ACCEL_RANGE_2_G:
+//   case XL_2_G:
 //     hw->a_scale = 2.0f / 32768.0f;
 //     break;
-//   case ACCEL_RANGE_4_G:
+//   case XL_4_G:
 //     hw->a_scale = 4.0f / 32768.0f;
 //     break;
-//   case ACCEL_RANGE_8_G:
+//   case XL_8_G:
 //     hw->a_scale = 8.0f / 32768.0f;
 //     break;
-//   case ACCEL_RANGE_16_G:
+//   case XL_16_G:
 //     hw->a_scale = 16.0f / 32768.0f;
 //     break;
 //   default:
@@ -641,11 +638,11 @@ void lsm6dsox_free(lsm6dsox_io_t *hw) {
 //   ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CTRL1_XL, &cmd, 1);
 //   if (ok < 0) return NULL;
 
-//   if (gyro_range == GYRO_RANGE_125_DPS) hw->g_scale = 125.0f / 32768.0f;
-//   else if (gyro_range == GYRO_RANGE_250_DPS) hw->g_scale = 250.0f / 32768.0f;
-//   else if (gyro_range == GYRO_RANGE_500_DPS) hw->g_scale = 500.0f / 32768.0f;
-//   else if (gyro_range == GYRO_RANGE_1000_DPS) hw->g_scale = 1000.0f / 32768.0f;
-//   else if (gyro_range == GYRO_RANGE_2000_DPS) hw->g_scale = 2000.0f / 32768.0f;
+//   if (gyro_range == G_125_DPS) hw->g_scale = 125.0f / 32768.0f;
+//   else if (gyro_range == G_250_DPS) hw->g_scale = 250.0f / 32768.0f;
+//   else if (gyro_range == G_500_DPS) hw->g_scale = 500.0f / 32768.0f;
+//   else if (gyro_range == G_1000_DPS) hw->g_scale = 1000.0f / 32768.0f;
+//   else if (gyro_range == G_2000_DPS) hw->g_scale = 2000.0f / 32768.0f;
 //   else return NULL;
 
 //   // if (!writeRegister(REG_CTRL2_G, odr | gyro_range)) return ERROR_CTRL2_G;
@@ -722,9 +719,9 @@ void lsm6dsox_free(lsm6dsox_io_t *hw) {
 //   return lsm6dsox_i2c_init(
 //       port,
 //       LSM6DSOX_ADDRESS,
-//       ACCEL_RANGE_4_G,
-//       GYRO_RANGE_2000_DPS,
-//       RATE_104_HZ);
+//       XL_4_G,
+//       G_2000_DPS,
+//       ODR_104_HZ);
 // }
 
 // // MSB 10000101 LSB = 128 + 4 + 1 = 133

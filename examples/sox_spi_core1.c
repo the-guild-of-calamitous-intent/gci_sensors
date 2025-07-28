@@ -72,9 +72,9 @@ void read_imu() {
   while (true) {
     imu = lsm6dsox_spi_init(
         0, CS,
-        LSM6DSOX_ACCEL_RANGE_16_G, LSM6DSOX_GYRO_RANGE_2000_DPS,
-        LSM6DSOX_RATE_104_HZ);
-    // RATE_208_HZ);
+        LSM6DSOX_XL_16_G, LSM6DSOX_G_2000_DPS,
+        LSM6DSOX_ODR_104_HZ);
+    // ODR_208_HZ);
     if (imu != NULL || imu->ok == true) break;
     printf("imu error\n");
     sleep_ms(2000);

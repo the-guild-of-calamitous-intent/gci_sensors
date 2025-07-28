@@ -19,36 +19,36 @@ extern "C" {
 #define LSM6DSOX_BUFFER_SIZE 14
 
 typedef enum : uint8_t {
-  LSM6DSOX_RATE_SHUTDOWN = 0x00,
-  LSM6DSOX_RATE_104_HZ   = 0x40,
-  LSM6DSOX_RATE_208_HZ   = 0x50,
-  LSM6DSOX_RATE_416_HZ   = 0x60, // needs XL_HM_MODE = 0
-  LSM6DSOX_RATE_833_HZ   = 0x70, // needs XL_HM_MODE = 0
-  LSM6DSOX_RATE_1660_HZ  = 0x80, // needs XL_HM_MODE = 0
-  LSM6DSOX_RATE_3330_HZ  = 0x90, // needs XL_HM_MODE = 0
-  LSM6DSOX_RATE_6660_HZ  = 0xA0  // needs XL_HM_MODE = 0
+  LSM6DSOX_ODR_SHUTDOWN = 0x00,
+  LSM6DSOX_ODR_104_HZ   = 0x40,
+  LSM6DSOX_ODR_208_HZ   = 0x50,
+  LSM6DSOX_ODR_416_HZ   = 0x60, // needs XL_HM_MODE = 0
+  LSM6DSOX_ODR_833_HZ   = 0x70, // needs XL_HM_MODE = 0
+  LSM6DSOX_ODR_1660_HZ  = 0x80, // needs XL_HM_MODE = 0
+  LSM6DSOX_ODR_3330_HZ  = 0x90, // needs XL_HM_MODE = 0
+  LSM6DSOX_ODR_6660_HZ  = 0xA0  // needs XL_HM_MODE = 0
 } lsm6dsox_odr_t;
 
 typedef enum {
-  LSM6DSOX_ACCEL_RANGE_2_G  = 0x00,
-  LSM6DSOX_ACCEL_RANGE_16_G = 0x04, // CTRL8_XL: XL_FS_MODE = 0
-  LSM6DSOX_ACCEL_RANGE_4_G  = 0x08,
-  LSM6DSOX_ACCEL_RANGE_8_G  = 0x0C
+  LSM6DSOX_XL_2_G  = 0x00,
+  LSM6DSOX_XL_16_G = 0x04, // CTRL8_XL: XL_FS_MODE = 0
+  LSM6DSOX_XL_4_G  = 0x08,
+  LSM6DSOX_XL_8_G  = 0x0C
 } lsm6dsox_xl_range_t;
 
 typedef enum { // CTRL2_G
-  LSM6DSOX_GYRO_RANGE_125_DPS  = 0x02,
-  LSM6DSOX_GYRO_RANGE_250_DPS  = 0x00,
-  LSM6DSOX_GYRO_RANGE_500_DPS  = 0x04,
-  LSM6DSOX_GYRO_RANGE_1000_DPS = 0x08,
-  LSM6DSOX_GYRO_RANGE_2000_DPS = 0x0C
+  LSM6DSOX_G_125_DPS  = 0x02,
+  LSM6DSOX_G_250_DPS  = 0x00,
+  LSM6DSOX_G_500_DPS  = 0x04,
+  LSM6DSOX_G_1000_DPS = 0x08,
+  LSM6DSOX_G_2000_DPS = 0x0C
 } lsm6dsox_g_range_t;
 
 typedef enum {
   LSM6DSOX_ERROR_NONE         = 0,
   LSM6DSOX_ERROR_WHOAMI       = -1,
-  LSM6DSOX_ERROR_GYRO_RANGE   = -2,
-  LSM6DSOX_ERROR_ACCEL_RANGE  = -4,
+  LSM6DSOX_ERROR_G            = -2,
+  LSM6DSOX_ERROR_XL           = -4,
   LSM6DSOX_ERROR_ODR          = -8,
   LSM6DSOX_ERROR_COMM_IF_FAIL = -16,
   LSM6DSOX_ERROR_INIT_BLK0    = -32,
@@ -124,27 +124,27 @@ lsm6dsox_io_t *lsm6dsox_spi_init(uint8_t port, pin_t cs,
 // } block_t;
 
 // The accelerometer/gyroscope data rate
-// constexpr uint8_t RATE_SHUTDOWN = 0x00;
-// constexpr uint8_t RATE_104_HZ   = 0x40;
-// constexpr uint8_t RATE_208_HZ   = 0x50;
-// constexpr uint8_t RATE_416_HZ   = 0x60;
-// constexpr uint8_t RATE_833_HZ   = 0x70;
-// constexpr uint8_t RATE_1660_HZ  = 0x80;
-// constexpr uint8_t RATE_3330_HZ  = 0x90;
-// constexpr uint8_t RATE_6660_HZ  = 0xA0;
+// constexpr uint8_t ODR_SHUTDOWN = 0x00;
+// constexpr uint8_t ODR_104_HZ   = 0x40;
+// constexpr uint8_t ODR_208_HZ   = 0x50;
+// constexpr uint8_t ODR_416_HZ   = 0x60;
+// constexpr uint8_t ODR_833_HZ   = 0x70;
+// constexpr uint8_t ODR_1660_HZ  = 0x80;
+// constexpr uint8_t ODR_3330_HZ  = 0x90;
+// constexpr uint8_t ODR_6660_HZ  = 0xA0;
 
 // The accelerometer data range
-// constexpr uint8_t ACCEL_RANGE_2_G  = (0x00 << 2);
-// constexpr uint8_t ACCEL_RANGE_16_G = (0x01 << 2); // CTRL8_XL: XL_FS_MODE = 0
-// constexpr uint8_t ACCEL_RANGE_4_G  = (0x02 << 2);
-// constexpr uint8_t ACCEL_RANGE_8_G  = (0x03 << 2);
+// constexpr uint8_t XL_2_G  = (0x00 << 2);
+// constexpr uint8_t XL_16_G = (0x01 << 2); // CTRL8_XL: XL_FS_MODE = 0
+// constexpr uint8_t XL_4_G  = (0x02 << 2);
+// constexpr uint8_t XL_8_G  = (0x03 << 2);
 
 // The gyro data range
-// constexpr uint8_t GYRO_RANGE_125_DPS  = (0x01 << 1);
-// constexpr uint8_t GYRO_RANGE_250_DPS  = (0x00 << 1);
-// constexpr uint8_t GYRO_RANGE_500_DPS  = (0x02 << 1);
-// constexpr uint8_t GYRO_RANGE_1000_DPS = (0x04 << 1);
-// constexpr uint8_t GYRO_RANGE_2000_DPS = (0x06 << 1);
+// constexpr uint8_t G_125_DPS  = (0x01 << 1);
+// constexpr uint8_t G_250_DPS  = (0x00 << 1);
+// constexpr uint8_t G_500_DPS  = (0x02 << 1);
+// constexpr uint8_t G_1000_DPS = (0x04 << 1);
+// constexpr uint8_t G_2000_DPS = (0x06 << 1);
 
 // #define LSM6DSOX_INT1_CRTL 0x02 // DRDY Gyro
 // #define LSM6DSOX_INT2_CRTL 0x00 // disable INT2
@@ -162,31 +162,31 @@ lsm6dsox_io_t *lsm6dsox_spi_init(uint8_t port, pin_t cs,
 
 // // The accelerometer/gyroscope data rate
 // enum ODR : uint8_t {
-//   RATE_SHUTDOWN = 0x00,
-//   RATE_104_HZ   = 0x40,
-//   RATE_208_HZ   = 0x50,
-//   RATE_416_HZ   = 0x60,
-//   RATE_833_HZ   = 0x70,
-//   RATE_1_66_KHZ = 0x80,
-//   RATE_3_33_KHZ = 0x90,
-//   RATE_6_66_KHZ = 0xA0,
+//   ODR_SHUTDOWN = 0x00,
+//   ODR_104_HZ   = 0x40,
+//   ODR_208_HZ   = 0x50,
+//   ODR_416_HZ   = 0x60,
+//   ODR_833_HZ   = 0x70,
+//   ODR_1_66_KHZ = 0x80,
+//   ODR_3_33_KHZ = 0x90,
+//   ODR_6_66_KHZ = 0xA0,
 // };
 
 // // The accelerometer data range
 // enum accel_range : uint8_t {
-//   ACCEL_RANGE_2_G  = (0x00 << 2),
-//   ACCEL_RANGE_16_G = (0x01 << 2),
-//   ACCEL_RANGE_4_G  = (0x02 << 2),
-//   ACCEL_RANGE_8_G  = (0x03 << 2)
+//   XL_2_G  = (0x00 << 2),
+//   XL_16_G = (0x01 << 2),
+//   XL_4_G  = (0x02 << 2),
+//   XL_8_G  = (0x03 << 2)
 // };
 
 // // The gyro data range
 // enum gyro_range : uint8_t {
-//   GYRO_RANGE_125_DPS  = (0x01 << 1),
-//   GYRO_RANGE_250_DPS  = (0x00 << 1),
-//   GYRO_RANGE_500_DPS  = (0x02 << 1),
-//   GYRO_RANGE_1000_DPS = (0x04 << 1),
-//   GYRO_RANGE_2000_DPS = (0x06 << 1)
+//   G_125_DPS  = (0x01 << 1),
+//   G_250_DPS  = (0x00 << 1),
+//   G_500_DPS  = (0x02 << 1),
+//   G_1000_DPS = (0x04 << 1),
+//   G_2000_DPS = (0x06 << 1)
 // };
 
 // TDA: temperature
@@ -206,8 +206,8 @@ lsm6dsox_io_t *lsm6dsox_spi_init(uint8_t port, pin_t cs,
 // enum sox_error : uint8_t {
 //   ERROR_NONE             = 0,
 //   ERROR_WHOAMI           = 1,
-//   ERROR_GYRO_RANGE       = 2,
-//   ERROR_ACCEL_RANGE      = 3,
+//   ERROR_G       = 2,
+//   ERROR_XL      = 3,
 //   ERROR_ENABLE_INT_ACCEL = 9,
 //   ERROR_ENABLE_INT_GYRO  = 10,
 //   ERROR_CTRL1_XL         = 11,
@@ -245,7 +245,7 @@ lsm6dsox_io_t *lsm6dsox_spi_init(uint8_t port, pin_t cs,
 //   block_t block;
 // }
 
-// ACCEL_RANGE_4_G, GYRO_RANGE_2000_DPS, RATE_104_HZ
+// XL_4_G, G_2000_DPS, ODR_104_HZ
 // lsm6dsox_i2c_t *lsm6dsox_i2c_init(uint8_t port, uint8_t addr,
 //                                   uint8_t accel_range, uint8_t gyro_range,
 //                                   uint8_t odr);

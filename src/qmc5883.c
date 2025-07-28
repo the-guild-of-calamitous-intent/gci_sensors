@@ -10,7 +10,7 @@
 // 	Standby			0x00
 // 	Continuous		0x01
 
-// OUTPUT DATA RATE (ODR)
+// OUTPUT DATA ODR (ODR)
 // 	10Hz        	0x00
 // 	50Hz        	0x04
 // 	100Hz       	0x08

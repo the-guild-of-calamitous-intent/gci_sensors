@@ -88,7 +88,6 @@ int i2c_read(void *config, uint8_t reg, uint8_t *data, size_t len) {
 //     .sda = (1 << 2) | (1 << 6) | (1 << 10) | (1 << 14) | (1 << 18) | (1 << 22) | (1 << 26),
 //     .scl = (1 << 3) | (1 << 7) | (1 << 11) | (1 << 15) | (1 << 19) | (1 << 23) | (1 << 27)};
 
-
 // int32_t gcis_i2c0_bus_init(uint32_t baud, pin_t pin_sda, pin_t pin_scl) {
 //   return gcis_i2c_bus_init(0, baud, pin_sda, pin_scl);
 // }

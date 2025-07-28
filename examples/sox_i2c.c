@@ -33,8 +33,8 @@ int main() {
   while (true) {
     imu = lsm6dsox_i2c_init(
         I2C_PORT, LSM6DSOX_ADDRESS,
-        LSM6DSOX_ACCEL_RANGE_4_G, LSM6DSOX_GYRO_RANGE_2000_DPS,
-        LSM6DSOX_RATE_1660_HZ);
+        LSM6DSOX_XL_4_G, LSM6DSOX_G_2000_DPS,
+        LSM6DSOX_ODR_1660_HZ);
     if (imu != NULL && imu->ok) break;
     printf("imu error\n");
     sleep_ms(1000);
@@ -134,7 +134,6 @@ int main() {
 // Timestamp: 15273610 msec
 // Delta: 1231 usec   1 msec   812.3Hz
 
-
 // -----------------------------
 // Accels: -0.008667 0.029907 1.004150 g
 // Gyros: 0.122070 -1.220703 -0.305176 dps
@@ -191,9 +190,6 @@ int main() {
 // Delta: 1892 usec   1 msec   528.5Hz
 // -----------------------------
 // Accels: -0.008667 0.0294
-
-
-
 
 // Temperature: 26.031250 C
 // Timestamp: 22691286 msec
@@ -257,4 +253,4 @@ int main() {
 // Gyros: 0.122070 -1.159668 -0.305176 dps
 // Temperature: 26.031250 C
 // Timestamp: 22704155 msec
-// Delta: 1245 usec 
+// Delta: 1245 usec
