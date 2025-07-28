@@ -75,7 +75,7 @@ void init_imu() {
     imu = lsm6dsox_spi_init(
         0, CS,
         LSM6DSOX_ACCEL_RANGE_16_G, LSM6DSOX_GYRO_RANGE_2000_DPS,
-        LSM6DSOX_RATE_1660_HZ);
+        LSM6DSOX_RATE_416_HZ);
     // RATE_208_HZ);
     if (imu != NULL || imu->ok == true) break;
     printf("imu error\n");

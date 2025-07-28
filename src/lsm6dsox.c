@@ -17,28 +17,6 @@
 #define REG_STATUS 0x1E
 #define REG_OUT_TEMP_L 0x20 // termperature
 
-// #define REG_FIFO_CTRL4 0x0A
-// #define REG_INT1_CTRL  0x0D // Set interrupts for INT1 pin
-// #define REG_INT2_CTRL  0x0E // Set interrupts for INT2 pin
-// #define REG_CTRL2_G    0x11 // Gyro settings hz and dps
-// #define REG_CTRL4_C    0x13
-// #define REG_CTRL5_C    0x14
-// #define REG_CTRL6_C    0x15 // Accel perf mode and Gyro LPF
-// #define REG_CTRL7_G    0x16 // Gyro filtering
-// #define REG_CTRL8_XL   0x17 // Accel filtering
-// #define REG_CTRL9_XL   0x18 // Accel filtering
-// #define REG_CTRL10_C   0x19 // tiimestamp
-// #define REG_OUTX_L_G   0x22 // gyro
-// #define REG_OUTX_L_A   0x28 // accel
-// #define REG_TIMESTAMP0 0x40 // 4B timestamp
-// #define IF_INC       0x04
-// #define XL_FS_MODE   0x02 // new mode, default 0
-// #define TIMESTAMP_EN 0x20
-// #define LPF2_XL_EN   0x02 // output from LPF2 second
-// filtering stage selected
-// (not default)
-// #define H_LACTIVE    0x20 // 0-high, 1-low - don't set this
-
 ////////////////////////////////////////////////////////////////////////////////
 
 static lsm6dsox_io_t *lsm6dsox_init(interface_t type, uint8_t port, uint8_t addr_cs, lsm6dsox_xl_range_t accel_range, lsm6dsox_g_range_t gyro_range, lsm6dsox_odr_t odr) {
@@ -386,6 +364,28 @@ void lsm6dsox_free(lsm6dsox_io_t *hw) {
   free(hw->comm);
   free(hw);
 }
+
+// #define REG_FIFO_CTRL4 0x0A
+// #define REG_INT1_CTRL  0x0D // Set interrupts for INT1 pin
+// #define REG_INT2_CTRL  0x0E // Set interrupts for INT2 pin
+// #define REG_CTRL2_G    0x11 // Gyro settings hz and dps
+// #define REG_CTRL4_C    0x13
+// #define REG_CTRL5_C    0x14
+// #define REG_CTRL6_C    0x15 // Accel perf mode and Gyro LPF
+// #define REG_CTRL7_G    0x16 // Gyro filtering
+// #define REG_CTRL8_XL   0x17 // Accel filtering
+// #define REG_CTRL9_XL   0x18 // Accel filtering
+// #define REG_CTRL10_C   0x19 // tiimestamp
+// #define REG_OUTX_L_G   0x22 // gyro
+// #define REG_OUTX_L_A   0x28 // accel
+// #define REG_TIMESTAMP0 0x40 // 4B timestamp
+// #define IF_INC       0x04
+// #define XL_FS_MODE   0x02 // new mode, default 0
+// #define TIMESTAMP_EN 0x20
+// #define LPF2_XL_EN   0x02 // output from LPF2 second
+// filtering stage selected
+// (not default)
+// #define H_LACTIVE    0x20 // 0-high, 1-low - don't set this
 
 // lsm6dsox_io_t *lsm6dsox_init(interface_t type, uint8_t port, uint8_t addr_cs, uint8_t accel_range, uint8_t gyro_range, uint8_t odr) {
 //   // uint8_t id;
