@@ -32,9 +32,10 @@ CTRL8_XL   | 0x00
 CTRL9_XL   | 0xD0
 CTRL10_C   | 0x00
 
-GYRO Filtering (Fig 19)
-You can bypass HPF and LPF1, but not LPF2
-You cannot set LPF2, see table 18
+## GYRO Filtering (Fig 19)
+
+You can bypass HPF and LPF1, but not LPF2.
+You cannot set LPF2, see table 18, pg 29
 
 LPF2 ODR [Hz] | Cutoff [Hz]
 --------------|--------------
@@ -43,21 +44,27 @@ LPF2 ODR [Hz] | Cutoff [Hz]
 416           |   135.9
 833           |   295.5
 1660          |   1108.1
+3333          |   1320.7
+6667          |   1441.8
+
+> NOTE: HPF and LPF1 are tied together, really, I think this is
+> a band pass filter if you use both of them.
 
 ```
-            |HP_EN_G|            |LPF1_SEL_G|
+             |HP_EN_G|            |LPF1_SEL_G|
 GYRO ADC -+->|  0    | --------+->|    0     | ---------+-> LPF2 -> SPI/I2C
           |  |       |         |  |          |          |
           +->|  1    | -> HPF -+  |    1     | -> LPF1 -+
 ```
 
-ACCEL Filtering (Fig 16 & 17)
+## ACCEL Filtering (Fig 16 & 17)
+
 The ACCEL has an analog anti-alias LPF (AALPF) right before the ADC
-and then goes into a digital LPF1 controled by ODR_XL and LPF2 is
-controlled by HPCF_XL
+and then goes into a digital LPF1 controled by `ODR_XL` and filters
+at ODR/2 (pg 28). The LPF2 is controlled by `HPCF_XL`.
 
 ```
-                        |LPF2_XL_EN|
+                         |LPF2_XL_EN|
 AALPF -> ADC -> LPF1 -+->|    0     | ---------+-> SPI/I2C
                       |  |          |          |
                       +->|    1     | -> LPF2 -+
