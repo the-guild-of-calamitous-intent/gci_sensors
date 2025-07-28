@@ -191,6 +191,14 @@ lsm6dsox_io_t *lsm6dsox_spi_init(uint8_t port, pin_t cs, lsm6dsox_xl_range_t acc
   return lsm6dsox_init(SPI_INTERFACE, port, cs, accel_range, gyro_range, odr);
 }
 
+lsm6dsox_io_t *lsm6dsox_spi_int_init(uint8_t port, pin_t cs, pin_t interrupt, void (*func)(void), lsm6dsox_odr_t odr) {
+  // setup interrupt
+  gpio_set_irq_enabled(interrupt, GPIO_IRQ_EDGE_RISE, true);
+  gpio_add_raw_irq_handler(interrupt, func);
+  irq_set_enabled(IO_IRQ_BANK0, true);
+  return lsm6dsox_init(SPI_INTERFACE, port, cs, LSM6DSOX_XL_8_G, LSM6DSOX_G_2000_DPS, odr);
+}
+
 // MSB 10000101 LSB = 128 + 4 + 1 = 133
 bool lsm6dsox_reboot(lsm6dsox_io_t *hw) {
   comm_interface_t *comm = hw->comm;

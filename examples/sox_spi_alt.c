@@ -57,9 +57,9 @@ bool is_gpio_interrupt_enabled(const uint gpio, const uint32_t event) {
 void init_imu() {
   // gpio_set_irq_enabled_with_callback(INT, GPIO_IRQ_EDGE_RISE, true, callback);
 
-  // gpio_set_irq_enabled(INT, GPIO_IRQ_EDGE_RISE, true);
-  // gpio_add_raw_irq_handler(INT, my_irq_handler);
-  // irq_set_enabled(IO_IRQ_BANK0, true);
+  gpio_set_irq_enabled(INT, GPIO_IRQ_EDGE_RISE, true);
+  gpio_add_raw_irq_handler(INT, my_irq_handler);
+  irq_set_enabled(IO_IRQ_BANK0, true);
 
   // Initialize the GPIO pin
   // gpio_init(INT);
@@ -74,9 +74,9 @@ void init_imu() {
   while (true) {
     // Grok says normal maneuvers (0.5-2G) and agressive maneuvers (3-6G)
     // and extreme flying (8-10G)
-    imu = lsm6dsox_spi_int_init(
-        0, CS, INT,
-        my_irq_handler,
+    imu = lsm6dsox_spi_init(
+        0, CS,
+        LSM6DSOX_XL_8_G, LSM6DSOX_G_2000_DPS,
         LSM6DSOX_ODR_416_HZ);
     // ODR_208_HZ);
     if (imu != NULL || imu->ok == true) break;

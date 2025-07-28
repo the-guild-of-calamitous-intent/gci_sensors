@@ -103,6 +103,8 @@ lsm6dsox_io_t *lsm6dsox_spi_init(uint8_t port, pin_t cs,
                                  lsm6dsox_xl_range_t accel_range,
                                  lsm6dsox_g_range_t gyro_range,
                                  lsm6dsox_odr_t odr);
+lsm6dsox_io_t *lsm6dsox_spi_int_init(uint8_t port, pin_t cs, pin_t interrupt,
+                                     void (*func)(void), lsm6dsox_odr_t odr);
 
 #if defined __cplusplus
 }

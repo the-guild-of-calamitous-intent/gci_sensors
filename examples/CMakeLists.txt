@@ -1,5 +1,6 @@
 LIST(APPEND examples
     sox_spi
+    # sox_spi_alt
     # sox_spi_core1
     # sox_i2c
     # bmp
