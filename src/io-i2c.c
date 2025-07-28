@@ -14,34 +14,16 @@ typedef enum {
   I2C_PTR_NULL        = -4,
   I2C_UNINITIALIZED   = -99
 } i2c_errors_t;
-
-// typedef struct {
-//   uint32_t sda;
-//   uint32_t scl;
-// } valid_i2c_pins_t;
-
-// constexpr valid_i2c_pins_t i2c0_valid = {
-//     .sda = (1 << 0) | (1 << 4) | (1 << 8) | (1 << 12) | (1 << 16) | (1 << 20) | (1 << 24) | (1 << 28),
-//     .scl = (1 << 1) | (1 << 5) | (1 << 9) | (1 << 13) | (1 << 17) | (1 << 21) | (1 << 25) | (1 << 29)};
-
-// constexpr valid_i2c_pins_t i2c1_valid = {
-//     .sda = (1 << 2) | (1 << 6) | (1 << 10) | (1 << 14) | (1 << 18) | (1 << 22) | (1 << 26),
-//     .scl = (1 << 3) | (1 << 7) | (1 << 11) | (1 << 15) | (1 << 19) | (1 << 23) | (1 << 27)};
-
 int32_t gcis_i2c_bus_init(uint32_t port, uint32_t baud, pin_t pin_sda, pin_t pin_scl) {
   pin_t sda, scl;
   i2c_inst_t *i2c = NULL;
 
   if (port == 0) {
-    // sda = i2c0_valid.sda;
-    // scl = i2c0_valid.scl;
     sda = (1 << 0) | (1 << 4) | (1 << 8) | (1 << 12) | (1 << 16) | (1 << 20) | (1 << 24) | (1 << 28);
     scl = (1 << 1) | (1 << 5) | (1 << 9) | (1 << 13) | (1 << 17) | (1 << 21) | (1 << 25) | (1 << 29);
     i2c = i2c0;
   }
   else if (port == 1) {
-    // sda = i2c1_valid.sda;
-    // scl = i2c1_valid.scl;
     sda = (1 << 2) | (1 << 6) | (1 << 10) | (1 << 14) | (1 << 18) | (1 << 22) | (1 << 26);
     scl = (1 << 3) | (1 << 7) | (1 << 11) | (1 << 15) | (1 << 19) | (1 << 23) | (1 << 27);
     i2c = i2c1;
@@ -92,6 +74,20 @@ int i2c_read(void *config, uint8_t reg, uint8_t *data, size_t len) {
   i2c_write_blocking(cfg->i2c, cfg->addr, &reg, 1, I2C_BUS_HOLD);
   return i2c_read_blocking(cfg->i2c, cfg->addr, data, len, I2C_BUS_RELEASE);
 }
+
+// typedef struct {
+//   uint32_t sda;
+//   uint32_t scl;
+// } valid_i2c_pins_t;
+
+// constexpr valid_i2c_pins_t i2c0_valid = {
+//     .sda = (1 << 0) | (1 << 4) | (1 << 8) | (1 << 12) | (1 << 16) | (1 << 20) | (1 << 24) | (1 << 28),
+//     .scl = (1 << 1) | (1 << 5) | (1 << 9) | (1 << 13) | (1 << 17) | (1 << 21) | (1 << 25) | (1 << 29)};
+
+// constexpr valid_i2c_pins_t i2c1_valid = {
+//     .sda = (1 << 2) | (1 << 6) | (1 << 10) | (1 << 14) | (1 << 18) | (1 << 22) | (1 << 26),
+//     .scl = (1 << 3) | (1 << 7) | (1 << 11) | (1 << 15) | (1 << 19) | (1 << 23) | (1 << 27)};
+
 
 // int32_t gcis_i2c0_bus_init(uint32_t baud, pin_t pin_sda, pin_t pin_scl) {
 //   return gcis_i2c_bus_init(0, baud, pin_sda, pin_scl);

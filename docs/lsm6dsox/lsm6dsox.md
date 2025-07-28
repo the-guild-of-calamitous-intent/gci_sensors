@@ -61,7 +61,7 @@ GYRO ADC -+->|  0    | --------+->|    0     | ---------+-> LPF2 -> SPI/I2C
 
 The ACCEL has an analog anti-alias LPF (AALPF) right before the ADC
 and then goes into a digital LPF1 controled by `ODR_XL` and filters
-at ODR/2 (pg 28). The LPF2 is controlled by `HPCF_XL`.
+at ODR/2 (pg 28). The LPF2 ODR is controlled by `HPCF_XL`.
 
 ```
                          |LPF2_XL_EN|
