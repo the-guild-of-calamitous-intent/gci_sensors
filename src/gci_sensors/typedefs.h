@@ -23,11 +23,12 @@ typedef struct {
 } vec3f_t;
 #endif
 
-#ifndef __VEC3S__
-  #define __VEC3S__
+#ifndef __PT__
+  #define __PT__
 typedef struct {
-  int16_t x, y, z;
-} vec3s_t;
+  float pressure;
+  float temperature;
+} pt_t;
 #endif
 
 #if defined __cplusplus

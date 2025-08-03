@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h> // memcpy
 
-#define I2C_BUS_HOLD true
+#define I2C_BUS_HOLD    true
 #define I2C_BUS_RELEASE false
 
 // FIXME: make global when picolib_c gone
@@ -14,6 +14,7 @@ typedef enum {
   I2C_PTR_NULL        = -4,
   I2C_UNINITIALIZED   = -99
 } i2c_errors_t;
+
 int32_t gcis_i2c_bus_init(uint32_t port, uint32_t baud, pin_t pin_sda, pin_t pin_scl) {
   pin_t sda, scl;
   i2c_inst_t *i2c = NULL;

@@ -1,35 +1,32 @@
+#include "gci_sensors/lis3mdl.h"
 #include <stdint.h>
 #include <string.h> // memcpy
-#include "gci_sensors/lis3mdl.h"
 
-// static constexpr uint32_t READ_MAG      = 6;
-// static constexpr uint32_t READ_MAG_TEMP = 8;
+#define REG_WHO_AM_I   0x0F
+#define REG_CTRL_REG1  0x20
+#define REG_CTRL_REG2  0x21
+#define REG_CTRL_REG3  0x22
+#define REG_CTRL_REG4  0x23
+#define REG_CTRL_REG5  0x24
+#define REG_STATUS_REG 0x27
+#define REG_OUT_X_L    0x28
+// #define REG_OUT_X_H    0x29
+// #define REG_OUT_Y_L    0x2A
+// #define REG_OUT_Y_H    0x2B
+// #define REG_OUT_Z_L    0x2C
+// #define REG_OUT_Z_H    0x2D
+// #define REG_TEMP_OUT_L 0x2E
+// #define REG_TEMP_OUT_H 0x2F
+// #define REG_INT_CFG    0x30
+// #define REG_INT_SRC    0x31
+// #define REG_INT_THS_L  0x32
+// #define REG_INT_THS_H  0x33
 
-static constexpr uint8_t REG_WHO_AM_I   = 0x0F;
-static constexpr uint8_t REG_CTRL_REG1  = 0x20;
-static constexpr uint8_t REG_CTRL_REG2  = 0x21;
-static constexpr uint8_t REG_CTRL_REG3  = 0x22;
-static constexpr uint8_t REG_CTRL_REG4  = 0x23;
-static constexpr uint8_t REG_CTRL_REG5  = 0x24;
-static constexpr uint8_t REG_STATUS_REG = 0x27;
-static constexpr uint8_t REG_OUT_X_L    = 0x28;
-// static constexpr uint8_t REG_OUT_X_H    = 0x29;
-// static constexpr uint8_t REG_OUT_Y_L    = 0x2A;
-// static constexpr uint8_t REG_OUT_Y_H    = 0x2B;
-// static constexpr uint8_t REG_OUT_Z_L    = 0x2C;
-// static constexpr uint8_t REG_OUT_Z_H    = 0x2D;
-// static constexpr uint8_t REG_TEMP_OUT_L = 0x2E;
-// static constexpr uint8_t REG_TEMP_OUT_H = 0x2F;
-// static constexpr uint8_t REG_INT_CFG    = 0x30;
-// static constexpr uint8_t REG_INT_SRC    = 0x31;
-// static constexpr uint8_t REG_INT_THS_L  = 0x32;
-// static constexpr uint8_t REG_INT_THS_H  = 0x33;
-
-static constexpr uint8_t WHO_AM_I            = 0x3D;
-static constexpr uint8_t STATUS_ZYXDA        = 0x08; // 0b00001000;
-static constexpr uint8_t LIS3MDL_TEMP_EN     = 0x80; // chip default off
-static constexpr uint8_t LIS3MDL_FAST_ODR_EN = 0x02;
-static constexpr uint8_t LIS3MDL_BDU_EN      = 0x40; // chip default off
+#define WHO_AM_I            0x3D
+#define STATUS_ZYXDA        0x08 // 0b00001000;
+#define LIS3MDL_TEMP_EN     0x80 // chip default off
+#define LIS3MDL_FAST_ODR_EN 0x02
+#define LIS3MDL_BDU_EN      0x40 // chip default off
 
 bool lis3mdl_ready(lis3mdl_io_t *hw) {
   comm_interface_t *comm = hw->comm;
@@ -89,16 +86,16 @@ static lis3mdl_io_t *lis3mdl_init(interface_t type, uint8_t port, uint8_t addr_c
 
   // clear memory
   cmd = 0x04; // SOFT_RESET
-  ok = comm->write(comm->config, REG_CTRL_REG2, &cmd, 1);
+  ok  = comm->write(comm->config, REG_CTRL_REG2, &cmd, 1);
   if (ok < 0) return NULL;
   sleep_ms(100);
 
   uint8_t data[5] = {
-    LIS3MDL_FAST_ODR_EN | (odr << 5), // CTRL1, set x,y ODR
-    range,                            // CTRL2
-    0x00,                             // CTRL3, hi pwr, continous sample
-    (odr << 2),                       // CTRL4, z ODR
-    0x00                              // CTRL5, BDU(0x40)
+      LIS3MDL_FAST_ODR_EN | (odr << 5), // CTRL1, set x,y ODR
+      range,                            // CTRL2
+      0x00,                             // CTRL3, hi pwr, continous sample
+      (odr << 2),                       // CTRL4, z ODR
+      0x00                              // CTRL5, BDU(0x40)
   };
 
   ok = comm->write(comm->config, REG_CTRL_REG1, data, 5);
@@ -178,10 +175,10 @@ bool lis3mdl_reboot(lis3mdl_io_t *hw) {
 //   return (float)((int16_t)((uint16_t)hi << 8) | lo);
 // }
 
-const lis3mdl_t lis3mdl_read(lis3mdl_io_t *hw) {
+const vec3f_t lis3mdl_read(lis3mdl_io_t *hw) {
   comm_interface_t *comm = hw->comm;
-  lis3mdl_t ret          = {0.0f, 0.0f, 0.0f};
-  int32_t ok = 0;
+  vec3f_t ret          = {0.0f, 0.0f, 0.0f};
+  int32_t ok             = 0;
   hw->ok                 = false;
 
   // uint8_t buf[MAG_BUFFER_SIZE];
@@ -194,7 +191,6 @@ const lis3mdl_t lis3mdl_read(lis3mdl_io_t *hw) {
   // ok = comm->read(comm->config, REG_OUT_X_L, hw->buff.b, MAG_BUFFER_SIZE);
   ok = comm->read(comm->config, REG_OUT_X_L, buf, MAG_BUFFER_SIZE);
   if (ok < 0) return ret;
-
 
   ret.x = hw->scale * cov_bb2f(buf[0], buf[1]); // gauss
   ret.y = hw->scale * cov_bb2f(buf[2], buf[3]);
@@ -218,12 +214,12 @@ const lis3mdl_t lis3mdl_read(lis3mdl_io_t *hw) {
   return ret;
 }
 
-// const lis3mdl_t lis3mdl_read_cal(lis3mdl_i2c_t *hw) {
-//   const lis3mdl_t m = lis3mdl_read(hw);
+// const vec3f_t lis3mdl_read_cal(lis3mdl_i2c_t *hw) {
+//   const vec3f_t m = lis3mdl_read(hw);
 //   if (m.ok == false) return m;
 //   float *sm = hw->sm;
 
-//   lis3mdl_t ret;
+//   vec3f_t ret;
 //   ret.x  = sm[0] * m.x + sm[1] * m.y + sm[2] * m.z - sm[3];
 //   ret.y  = sm[4] * m.x + sm[5] * m.y + sm[6] * m.z - sm[7];
 //   ret.z  = sm[8] * m.x + sm[9] * m.y + sm[10] * m.z - sm[11];

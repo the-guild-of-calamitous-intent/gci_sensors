@@ -7,11 +7,11 @@
 #include <stdio.h>
 #include <tusb.h> // wait for USB
 
-#define SCK 2
-#define TX 3 // SDO
-#define RX 4 // SDI
-#define CS 5
-#define INT 15
+#define SCK         2
+#define TX          3 // SDO
+#define RX          4 // SDI
+#define CS          5
+#define INT         15
 #define BUFFER_SIZE 10
 // constexpr float M_PIf = 3.14159265358979323846f;
 

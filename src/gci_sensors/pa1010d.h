@@ -14,8 +14,7 @@
 extern "C" {
 #endif
 
-// constexpr uint8_t PA1010D_ADDRESS = 0x10;
-constexpr uint16_t PA1010D_BUFFER_SIZE = 250;
+#define PA1010D_BUFFER_SIZE 250
 
 typedef struct {
   comm_interface_t *comm;

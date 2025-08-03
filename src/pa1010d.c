@@ -2,8 +2,8 @@
 #include <string.h> // memcpy
 
 #define PA1010D_ADDRESS 0x10
-#define LOOP_FAIL 5
-#define MAX_NEMA_SIZE 82
+#define LOOP_FAIL       5
+#define MAX_NEMA_SIZE   82
 
 static inline bool ascii_nema(const char c) {
   return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || c == '*' || c == ',' || c == '.';

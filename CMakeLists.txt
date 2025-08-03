@@ -71,6 +71,7 @@ add_library(${PROJECT_NAME}
   src/lps22.c
   src/lsm6dsox.c
   src/pa1010d.c
+  src/mlx90393.c
 )
 target_include_directories(${PROJECT_NAME} 
   PUBLIC 

@@ -11,9 +11,9 @@
 // ctrl-a-d
 
 #define SCK 2
-#define TX 3 // SDO
-#define RX 4 // SDI
-#define CS 13
+#define TX  3 // SDO
+#define RX  4 // SDI
+#define CS  13
 #define INT 14
 #define EXT 5 // not using
 

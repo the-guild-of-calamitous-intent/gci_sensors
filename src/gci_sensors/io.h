@@ -14,7 +14,7 @@
 // A lot of pico IO functions return PICO_ERROR_GENERIC on
 // error:
 //
-// PICO_ERROR_GENERIC = -1
+// PICO_ERROR_GENERIC -1
 
 #ifndef __PIN__
   #define __PIN__
@@ -26,18 +26,17 @@ typedef uint32_t pin_t;
 #define PICO_SPI_0 0
 #define PICO_SPI_1 1
 
-constexpr uint32_t GCIS_SPI_20MHZ        = 20000000; // maximum
-constexpr uint32_t GCIS_SPI_10MHZ        = 10000000;
-constexpr uint32_t GCIS_SPI_5MHZ         = 5000000;
-constexpr uint32_t GCIS_SPI_1MHZ         = 1000000;
-constexpr uint32_t GCIS_SPI_100KHZ       = 100000;
-constexpr uint32_t GCIS_SPI_DEFAULT_BAUD = 48000; // default rate
+#define GCIS_SPI_20MHZ 20000000 // maximum
+#define GCIS_SPI_10MHZ 10000000
+#define GCIS_SPI_5MHZ 5000000
+#define GCIS_SPI_1MHZ 1000000
+#define GCIS_SPI_100KHZ 100000
 
-constexpr uint32_t GCIS_I2C_100KHZ       = 100 * 1000UL;
-constexpr uint32_t GCIS_I2C_400KHZ       = 400 * 1000UL;
-constexpr uint32_t GCIS_I2C_1000KHZ      = 1000 * 1000UL;
-constexpr uint32_t GCIS_I2C_1700KHZ      = 1700 * 1000UL;
-constexpr uint32_t GCIS_I2C_3400KHZ      = 3400 * 1000UL;
+#define GCIS_I2C_100KHZ (100 * 1000UL)
+#define GCIS_I2C_400KHZ (400 * 1000UL)
+#define GCIS_I2C_1000KHZ (1000 * 1000UL)
+#define GCIS_I2C_1700KHZ (1700 * 1000UL)
+#define GCIS_I2C_3400KHZ (3400 * 1000UL)
 
 // --- Communication Interface ----------------------------
 
@@ -98,13 +97,11 @@ int spi_write(void *config, uint8_t reg, const uint8_t *data, size_t len);
 int spi_read(void *config, uint8_t reg, uint8_t *data, size_t len);
 
 // --- Useful Functions -------------------
-inline
-float cov_bb2f(uint8_t lsb, uint8_t msb) {
+inline float cov_bb2f(uint8_t lsb, uint8_t msb) {
   return (float)((int16_t)((uint16_t)msb << 8) | lsb);
 }
 
-inline
-float cov_bbb2f(uint8_t lsb, uint8_t xsb, uint8_t msb) {
+inline float cov_bbb2f(uint8_t lsb, uint8_t xsb, uint8_t msb) {
   return (float)(((uint32_t)msb << 16) | ((uint32_t)xsb << 8) | (uint32_t)lsb);
 }
 

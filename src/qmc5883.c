@@ -26,16 +26,16 @@
 // 	128         	0x80
 // 	64          	0xC0
 
-#define QMC5883L_DATA_X_LSB_REG 0x00
-#define QMC5883L_STATUS_REG 0x06
+#define QMC5883L_DATA_X_LSB_REG  0x00
+#define QMC5883L_STATUS_REG      0x06
 #define QMC5883L_TEMPERATURE_REG 0x07
-#define QMC5883L_CTRL1_REG 0x09
-#define QMC5883L_CTRL2_REG 0x0A
-#define QMC5883L_PERIOD_REG 0x0B
-#define QMC5883L_WHO_AM_I_REG 0x0D // 0x10 // ID REG A really, holds ASCII H
+#define QMC5883L_CTRL1_REG       0x09
+#define QMC5883L_CTRL2_REG       0x0A
+#define QMC5883L_PERIOD_REG      0x0B
+#define QMC5883L_WHO_AM_I_REG    0x0D // 0x10 // ID REG A really, holds ASCII H
 
-#define QMC5883L_ADDR 0x0D     // 0x1E
-#define QMC5883L_WHO_AM_I 0xFF // 0x68 // ASCII H
+#define QMC5883L_ADDR       0x0D // 0x1E
+#define QMC5883L_WHO_AM_I   0xFF // 0x68 // ASCII H
 #define QMC5883L_SOFT_RESET (1 << 7)
 
 typedef enum : uint8_t {
@@ -160,8 +160,8 @@ qmc5883_io_t *qmc5883_spi_init(uint8_t port, qmc5883_range_t range) {
   return qmc5883_init(SPI_INTERFACE, port, range);
 }
 
-qmc5883_t qmc5883_read(qmc5883_io_t *hw) {
-  qmc5883_t ret;
+vec3f_t qmc5883_read(qmc5883_io_t *hw) {
+  vec3f_t ret;
   hw->ok                 = false;
   comm_interface_t *comm = hw->comm;
   // uint8_t *buf           = hw->buf;
@@ -192,7 +192,7 @@ qmc5883_t qmc5883_read(qmc5883_io_t *hw) {
 
   printf(">> ok: %d   STATUS_REG: %u  overflow: %u\n", ok, (uint32_t)buf[6], buf[6] >> 1);
 
-  ret.temperature = (float)(((int16_t)buf[8] << 8) | buf[7]) / 100.0f;
+  // ret.temperature = (float)(((int16_t)buf[8] << 8) | buf[7]) / 100.0f;
 
   hw->ok = true;
 

@@ -10,53 +10,53 @@ References:
 
 // #pragma once
 
+#include "gci_sensors/lps22.h"
 #include <math.h>
 #include <stdio.h>  // printf
 #include <stdlib.h> // calloc
-#include "gci_sensors/lps22.h"
 
 // Registers and fields
 #define LPS22_WHO_AM_I 0xB1
 
-#define LPS22_CTRL_REG1_BDU_EN (1 << 1)
+#define LPS22_CTRL_REG1_BDU_EN       (1 << 1)
 #define LPS22_CTRL_REG1_LPFP_DISABLE (1 << 2)
-#define LPS22_CTRL_REG1_LPFP_DIV_9 (2 << 2)
-#define LPS22_CTRL_REG1_LPFP_DIV_20 (3 << 2)
-#define LPS22_CTRL_REG2_ONESHOT 0x01
-#define LPS22_CTRL_REG2_SWRESET (1 << 2)
-#define LPS22_CTRL_REG2_I2C_DIS (1 << 3)
-#define LPS22_CTRL_REG2_BOOT (1 << 7)
-#define LPS22_IF_ADD_INC 0x10 // auto increment
+#define LPS22_CTRL_REG1_LPFP_DIV_9   (2 << 2)
+#define LPS22_CTRL_REG1_LPFP_DIV_20  (3 << 2)
+#define LPS22_CTRL_REG2_ONESHOT      0x01
+#define LPS22_CTRL_REG2_SWRESET      (1 << 2)
+#define LPS22_CTRL_REG2_I2C_DIS      (1 << 3)
+#define LPS22_CTRL_REG2_BOOT         (1 << 7)
+#define LPS22_IF_ADD_INC             0x10 // auto increment
 
 #define LPS22_CTRL_REG3_INT_S_DRDY 0x00
-#define LPS22_CTRL_REG3_DRDY_EN (1 << 2)
-#define LPS22_CTRL_REG3_PUSH_PULL 0x00 // (0 << 6)
+#define LPS22_CTRL_REG3_DRDY_EN    (1 << 2)
+#define LPS22_CTRL_REG3_PUSH_PULL  0x00 // (0 << 6)
 #define LPS22_CTRL_REG3_OPEN_DRAIN (1 << 6)
-#define LPS22_CTRL_REG3_ACTIVE_HI 0x00 // (0 << 7)
-#define LPS22_CTRL_REG3_ACTIVE_LO (1 << 7)
+#define LPS22_CTRL_REG3_ACTIVE_HI  0x00 // (0 << 7)
+#define LPS22_CTRL_REG3_ACTIVE_LO  (1 << 7)
 
 #define LPS22_INTERRUPT_CFG 0x0B
-#define LPS22_WHO_AM_I_REG 0x0F
-#define LPS22_CTRL_REG1 0x10
-#define LPS22_CTRL_REG2 0x11
-#define LPS22_CTRL_REG3 0x12
+#define LPS22_WHO_AM_I_REG  0x0F
+#define LPS22_CTRL_REG1     0x10
+#define LPS22_CTRL_REG2     0x11
+#define LPS22_CTRL_REG3     0x12
 // RESERVED                           0x13
 // FIFO                               0x14
-#define LPS22_REF_P_XL 0x15
-#define LPS22_REF_P_L 0x16
-#define LPS22_REF_P_H 0x17
-#define LPS22_RPDS_L 0x18
-#define LPS22_RPDS_H 0x19
-#define LPS22_RES_CONF 0x1A
+#define LPS22_REF_P_XL   0x15
+#define LPS22_REF_P_L    0x16
+#define LPS22_REF_P_H    0x17
+#define LPS22_RPDS_L     0x18
+#define LPS22_RPDS_H     0x19
+#define LPS22_RES_CONF   0x1A
 #define LPS22_INT_SOURCE 0x25
-#define LPS22_STATUS 0x27
+#define LPS22_STATUS     0x27
 // FIFO RES                           0x26
 #define LPS22_PRESSURE_OUT_XL 0x28
-#define LPS22_PRESSURE_OUT_L 0x29
-#define LPS22_PRESSURE_OUT_H 0x2A
-#define LPS22_TEMP_OUT_L 0x2B
-#define LPS22_TEMP_OUT_H 0x2C
-#define LPS22_LPFP_RES 0x33
+#define LPS22_PRESSURE_OUT_L  0x29
+#define LPS22_PRESSURE_OUT_H  0x2A
+#define LPS22_TEMP_OUT_L      0x2B
+#define LPS22_TEMP_OUT_H      0x2C
+#define LPS22_LPFP_RES        0x33
 
 lps22_io_t *lps22_spi_init(uint8_t port, pin_t cs, lps22_odr_t ODR) {
   lps22_io_t *hw = (lps22_io_t *)calloc(1, sizeof(lps22_io_t));

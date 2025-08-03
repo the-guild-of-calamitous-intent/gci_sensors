@@ -8,8 +8,8 @@
 #include "gci_sensors/qmc5883.h"
 
 #define PORT 0
-#define SDA 4
-#define SCL 5
+#define SDA  4
+#define SCL  5
 
 int main() {
   stdio_init_all();
@@ -36,7 +36,7 @@ int main() {
   while (true) {
     sleep_ms(2000);
 
-    qmc5883_t m = qmc5883_read(mag);
+    vec3f_t m = qmc5883_read(mag);
     if (mag->ok == false) {
       printf("*** bad reading ***\n");
       continue;

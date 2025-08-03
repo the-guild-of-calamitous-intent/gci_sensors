@@ -5,8 +5,8 @@
 ////////////////////////////////////////////////
 #pragma once
 
+#include "gci_sensors/io.h"
 #include "gci_sensors/typedefs.h"
-#include "io.h"
 #include <stdbool.h>
 #include <stdint.h>
 

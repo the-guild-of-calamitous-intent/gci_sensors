@@ -10,9 +10,9 @@ References:
 
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
 #include "gci_sensors/io.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 #if defined __cplusplus
 extern "C" {

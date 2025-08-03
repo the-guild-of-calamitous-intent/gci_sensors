@@ -4,17 +4,17 @@
 #include <stdlib.h> // calloc
 #include <string.h> // memcpy
 
-#define WHO_AM_I 0x6C // 01101100 108
-#define TEMP_SCALE (1.0f / 256.0f)
-#define INT_DRDY_XL 0x01   // accel data ready INT pin
-#define INT_DRDY_G 0x02    // gyro data ready INT pin
+#define WHO_AM_I      0x6C // 01101100 108
+#define TEMP_SCALE    (1.0f / 256.0f)
+#define INT_DRDY_XL   0x01 // accel data ready INT pin
+#define INT_DRDY_G    0x02 // gyro data ready INT pin
 #define INT_DRDY_TEMP 0x04 // temperature data ready INT pin
 
 #define REG_FIFO_CTRL1 0x07
-#define REG_WHO_AM_I 0x0F // 01101100
-#define REG_CTRL1_XL 0x10 // Accel settings
-#define REG_CTRL3_C 0x12  // interrupt stuff, reboot
-#define REG_STATUS 0x1E
+#define REG_WHO_AM_I   0x0F // 01101100
+#define REG_CTRL1_XL   0x10 // Accel settings
+#define REG_CTRL3_C    0x12 // interrupt stuff, reboot
+#define REG_STATUS     0x1E
 #define REG_OUT_TEMP_L 0x20 // termperature
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -99,8 +99,8 @@ static lsm6dsox_io_t *lsm6dsox_init(interface_t type, uint8_t port, uint8_t addr
   // CTRL9_XL   | 0xD0
   // CTRL10_C   | 0x00
 
-  const uint8_t INT1_DRDY_G = 0x02; // 0x02: G ready
-  const uint8_t INT2_DRDY_A = 0x01; // 0x01: XL ready, 0x00: disable INT2
+#define INT1_DRDY_G 0x02 // 0x02: G ready
+#define INT2_DRDY_A 0x01 // 0x01: XL ready, 0x00: disable INT2
   // reg 07-0E
   uint8_t blk0[8] = {
       0x00,        // FIFO 1 (default)
@@ -140,17 +140,17 @@ static lsm6dsox_io_t *lsm6dsox_init(interface_t type, uint8_t port, uint8_t addr
   //                       |  |          |          |
   //                       +->|    1     | -> LPF2 -+
 
-  const uint8_t HP_EN_G    = 0x00;                            // G disable HPF
-  const uint8_t LPF1_SEL_G = 0x00;                            // G turn off LPF1, only use LPF2
-  const uint8_t LPF2_XL_EN = 0x00;                            // turn off LPF2 for XL
-  const uint8_t IF_INC     = 0x04;                            // 0x04: auto incr pointer on read reg
-  const uint8_t G_BW       = 0x03;                            // 0x03: FTYPE, LPF1 highest BW - Don't care, disabled
-  const uint8_t I2C_EN     = (type == I2C_INTERFACE) ? 0 : 4; // 0: enable, 4: disable
-  const uint8_t BDU        = 0x40;                            // 0x00: continuous, 0x40: not updated until read
-  const uint8_t PP_OD      = 0x00;                            // 0x00: push-pull mode ... this is what I want
-  const uint8_t I3C_DIS    = 0x02;                            // 0x02: disable I3C
-  const uint8_t DEN        = 0xD0;                            // 0xD0: DEN ... don't use, but is default
-  const uint8_t TS_DIS     = 0x00;                            // timestamp EN: 0x20, DIS: 0x00
+#define HP_EN_G    0x00                              // G disable HPF
+#define LPF1_SEL_G 0x00                              // G turn off LPF1, only use LPF2
+#define LPF2_XL_EN 0x00                              // turn off LPF2 for XL
+#define IF_INC     0x04                              // 0x04: auto incr pointer on read reg
+#define G_BW       0x03                              // 0x03: FTYPE, LPF1 highest BW - Don't care, disabled
+#define I2C_EN     ((type == I2C_INTERFACE) ? 0 : 4) // 0: enable, 4: disable
+#define BDU        0x40                              // 0x00: continuous, 0x40: not updated until read
+#define PP_OD      0x00                              // 0x00: push-pull mode ... this is what I want
+#define I3C_DIS    0x02                              // 0x02: disable I3C
+#define DEN        0xD0                              // 0xD0: DEN ... don't use, but is default
+#define TS_DIS     0x00                              // timestamp EN: 0x20, DIS: 0x00
 
   // reg 10-19
   uint8_t blk1[10] = {

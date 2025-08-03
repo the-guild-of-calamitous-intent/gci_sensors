@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <tusb.h> // wait for USB
 
-#define SCL 17
-#define SDA 16
+#define SCL      17
+#define SDA      16
 #define I2C_PORT 0
 
 int main() {

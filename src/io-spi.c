@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h> // memcpy
 
-#define SPI_ACTIVATE 0
+#define SPI_ACTIVATE   0
 #define SPI_DEACTIVATE 1
 
 int32_t gcis_spi_bus_init(

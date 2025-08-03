@@ -6,11 +6,11 @@
 #include <stdio.h>
 #include <tusb.h> // wait for USB
 
-#define SCK 2
-#define TX 3 // SDO
-#define RX 4 // SDI
-#define CS 5
-#define INT 15
+#define SCK         2
+#define TX          3 // SDO
+#define RX          4 // SDI
+#define CS          5
+#define INT         15
 #define BUFFER_SIZE 10
 // constexpr float M_PIf = 3.14159265358979323846f;
 
@@ -149,7 +149,6 @@ int main() {
   }
 
   uint32_t speed = gcis_spi0_init(GCIS_SPI_10MHZ, RX, TX, SCK);
-  // gcis_spi_init_cs(CS);
 
   printf(">> spi instance: %u baudrate: %u\n", 0, speed);
   printf(">> spi SDI: %u SDO: %u SCK: %u CS: %u\n", TX, RX, SCK, CS);
