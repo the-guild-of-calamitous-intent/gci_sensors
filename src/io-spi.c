@@ -51,25 +51,30 @@ int32_t gcis_spi1_init(uint32_t baud, pin_t sdi, pin_t sdo, pin_t sck) {
   return gcis_spi_bus_init(1, baud, sdi, sdo, sck);
 }
 
-void gcis_spi_free(uint8_t port) {
-  // spi_config_t *cfg = (spi_config_t *)config;
-  spi_inst_t *spi = NULL;
-  spi             = (port == 0) ? spi0 : spi1;
-  spi_deinit(spi);
-}
+// void gcis_spi_free(uint8_t port) {
+//   // spi_config_t *cfg = (spi_config_t *)config;
+//   spi_inst_t *spi = NULL;
+//   spi             = (port == 0) ? spi0 : spi1;
+//   spi_deinit(spi);
+// }
+
+
+///////////////////////////////////////////////////////////////////////
 
 int spi_write(void *config, uint8_t reg, const uint8_t *data, size_t len) {
   int ret;
   spi_config_t *cfg = (spi_config_t *)config;
 
-  gpio_put(cfg->cs_pin, SPI_ACTIVATE); // CS low (active)
   uint8_t buffer[len + 1];
-  buffer[0] = reg;
+  buffer[0] = reg & 0x7F; // clear bit 7, write bit for SPI
   memcpy(&buffer[1], data, len);
+
+  gpio_put(cfg->cs_pin, SPI_ACTIVATE); // CS low (active)
   ret = spi_write_blocking(cfg->spi, buffer, len + 1);
   gpio_put(cfg->cs_pin, SPI_DEACTIVATE); // CS high
 
   // this doesn't always work ... why?
+  // reg &= 0x7F; // clear bit 7, write bit for SPI
   // gpio_put(cfg->cs_pin, SPI_ACTIVATE); // CS low (active)
   // spi_write_blocking(cfg->spi, &reg, 1);
   // ret = spi_write_blocking(cfg->spi, data, len);
@@ -78,47 +83,95 @@ int spi_write(void *config, uint8_t reg, const uint8_t *data, size_t len) {
   return ret;
 }
 
+// int spi_read(void *config, uint8_t reg, uint8_t *data, size_t len) {
+//   spi_config_t *cfg = (spi_config_t *)config;
+//   int ret;
+
+//   reg |= 0x80; // set bit 7, read bit for SPI
+//   gpio_put(cfg->cs_pin, SPI_ACTIVATE); // CS low
+//   spi_write_blocking(cfg->spi, &reg, 1);
+//   sleep_us(1);
+//   ret = spi_read_blocking(cfg->spi, 0x00, data, len);
+//   gpio_put(cfg->cs_pin, SPI_DEACTIVATE); // CS high
+//   return ret;
+// }
+
 int spi_read(void *config, uint8_t reg, uint8_t *data, size_t len) {
-  // https://github.com/betaflight/betaflight/blob/c545435f2e1b2561085bbda6c387424db4c383b7/src/main/drivers/bus.c#L123
-  // BF ORs with 0x80 also
-  reg |= 0x80;
-  int ret;
   spi_config_t *cfg = (spi_config_t *)config;
+  reg |= 0x80;
+
   gpio_put(cfg->cs_pin, SPI_ACTIVATE); // CS low
-  spi_write_blocking(cfg->spi, &reg, 1);
-  sleep_us(1);
-  // if (spi_is_readable(cfg->spi) == false) sleep_us(100); // doesn't help
-  ret = spi_read_blocking(cfg->spi, 0, data, len);
+  if (spi_write_blocking(cfg->spi, &reg, 1) < 0) return -1;
+  if (spi_read_blocking(cfg->spi, 0x00, data, len) < 0) return -1;
+  // printf(">> spi_read_blocking ret: %d\n", ret);
   gpio_put(cfg->cs_pin, SPI_DEACTIVATE); // CS high
-  return ret;
+  // memcpy(data, buff, len);
+  
+  // printf(">> spi_read reg: 0x%02X\n", reg);
+  // for (int i=0; i< len; ++i) printf(">> spi_read data: 0x%02X\n", data[i]);
+  return 0;
 }
 
-// typedef struct {
-//   pin_t sdi;
-//   pin_t csn;
-//   pin_t sck;
-//   pin_t sdo;
-// } valid_spi_pins_t;
+///////////////////////////////////////////////////////////////////////
 
-// constexpr valid_spi_pins_t spi0_valid = {
-//     .sdi = (1 << 0) | (1 << 4) | (1 << 16) | (1 << 20),
-//     .csn = (1 << 1) | (1 << 5) | (1 << 17) | (1 << 21),
-//     .sck = (1 << 2) | (1 << 6) | (1 << 18),
-//     .sdo = (1 << 3) | (1 << 7) | (1 << 19)};
+int spi_read_status(void *config, uint8_t reg, uint8_t *data, size_t len) {
+  spi_config_t *cfg = (spi_config_t *)config;
+  uint8_t tmp[2] = {reg | 0x80, 0x00};
 
-// constexpr valid_spi_pins_t spi1_valid = {
-//     .sdi = (1 << 8) | (1 << 12) | (1 << 28),
-//     .csn = (1 << 9) | (1 << 13),
-//     .sck = (1 << 10) | (1 << 14) | (1 << 26),
-//     .sdo = (1 << 11) | (1 << 15) | (1 << 27)};
+  gpio_put(cfg->cs_pin, SPI_ACTIVATE); // CS low
+  if (spi_write_read_blocking(cfg->spi, tmp, tmp, 2) < 0) return -1;
+  if (spi_read_blocking(cfg->spi, 0x00, data, len) < 0) return -1;
+  gpio_put(cfg->cs_pin, SPI_DEACTIVATE); // CS high
+  
+  // for (int i=0; i< len; ++i) printf(">> spi_read data: 0x%02X\n", data[i]);
+  return len;
+}
 
-// void gcis_spi_init_cs(pin_t cs, spi_cs_t opt) {
-//   // Chip select is active-low, so we'll initialise it to a driven-high state
-//   gpio_init(cs);
-//   gpio_set_dir(cs, GPIO_OUT);
-//   gpio_put(cs, 1);
+int spi_write_status(void *config, uint8_t reg, const uint8_t *data, size_t len) {
+  int ret;
+  uint8_t status    = 0;
+  spi_config_t *cfg = (spi_config_t *)config;
 
-//   if (opt == SPI_CS_PULLDOWN) gpio_pull_down(cs);
-//   else if (opt == SPI_CS_PULLUP) gpio_pull_up(cs);
-//   else gpio_disable_pulls(cs);
+  reg &= 0x7F; // clear bit 7, write bit for SPI
+
+  gpio_put(cfg->cs_pin, SPI_ACTIVATE); // CS low (active)
+  uint8_t buffer[len + 1];
+  buffer[0] = reg;
+  if (len > 0) memcpy(&buffer[1], data, len);
+  ret = spi_write_blocking(cfg->spi, buffer, len + 1);
+  sleep_us(1);
+  spi_read_blocking(cfg->spi, 0, &status, 1); // grab status bit ... return?
+  gpio_put(cfg->cs_pin, SPI_DEACTIVATE);      // CS high
+
+  // this doesn't always work ... why?
+  // gpio_put(cfg->cs_pin, SPI_ACTIVATE); // CS low (active)
+  // spi_write_blocking(cfg->spi, &reg, 1);
+  // ret = spi_write_blocking(cfg->spi, data, len);
+  // gpio_put(cfg->cs_pin, SPI_DEACTIVATE); // CS high
+
+  return ret; //(ret < 0) ? ret : status;
+}
+
+// int spi_read_status(void *config, uint8_t reg, uint8_t *data, size_t len) {
+//   // https://github.com/betaflight/betaflight/blob/c545435f2e1b2561085bbda6c387424db4c383b7/src/main/drivers/bus.c#L123
+//   // BF ORs with 0x80 also
+//   reg |= 0x80; // set bit 7, read bit for SPI
+//   uint8_t status;
+
+//   int ret;
+//   spi_config_t *cfg = (spi_config_t *)config;
+
+//   gpio_put(cfg->cs_pin, SPI_ACTIVATE); // CS low
+//   spi_write_blocking(cfg->spi, &reg, 1);
+//   sleep_us(1);
+//   spi_read_blocking(cfg->spi, 0, &status, 1); // grab status byte ... return?
+
+//   // spi_write_read_blocking(cfg->spi,&reg,&dummy,1); // doesn't work
+
+//   // if (spi_is_readable(cfg->spi) == false) sleep_us(100); // doesn't help
+
+//   ret = spi_read_blocking(cfg->spi, 0x00, data, len);
+//   gpio_put(cfg->cs_pin, SPI_DEACTIVATE); // CS high
+//   return ret; //(ret < 0) ? ret : status;
 // }
+

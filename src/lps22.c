@@ -8,12 +8,13 @@ References:
 - https://www.st.com/resource/en/datasheet/dm00140895.pdf
 */
 
-// #pragma once
-
-#include "gci_sensors/lps22.h"
 #include <math.h>
 #include <stdio.h>  // printf
 #include <stdlib.h> // calloc
+
+#include "gci_sensors/lps22.h"
+#include "gci_sensors/io.h" // cov_bb2f
+
 
 // Registers and fields
 #define LPS22_WHO_AM_I 0xB1
@@ -58,104 +59,55 @@ References:
 #define LPS22_TEMP_OUT_H      0x2C
 #define LPS22_LPFP_RES        0x33
 
-lps22_io_t *lps22_spi_init(uint8_t port, pin_t cs, lps22_odr_t ODR) {
+
+lps22_io_t *lps22_create(uint8_t port, pin_t cs) {
   lps22_io_t *hw = (lps22_io_t *)calloc(1, sizeof(lps22_io_t));
   if (hw == NULL) return NULL;
 
   comm_interface_t *comm = comm_interface_init(port, cs, SPI_INTERFACE);
-  if (comm == NULL) return NULL;
+  if (comm == NULL) {
+    free(hw);
+    return NULL;
+  }
 
   hw->comm = comm;
+  return hw;
+}
 
-  uint8_t reg = 0;
-  int ok      = comm->read(comm->config, LPS22_WHO_AM_I_REG, &reg, 1);
-  if ((reg != LPS22_WHO_AM_I) || (ok < 0)) return NULL;
+int lps22_spi_init(lps22_io_t *hw, lps22_odr_t ODR) {
+  if (hw == NULL) return GCIS_ERROR_IO_NULL;
+  comm_interface_t *comm = hw->comm;
+
+  uint8_t reg;
+  if(comm->read(comm->config, LPS22_WHO_AM_I_REG, &reg, 1) < 0) return -1;
+  if (reg != LPS22_WHO_AM_I) return GCIS_ERROR_WHOAMI;
 
   // SWRESET - reset regs to default
   reg = LPS22_CTRL_REG2_SWRESET;
   comm->write(comm->config, LPS22_CTRL_REG2, &reg, 1);
-  sleep_ms(100);
+  sleep_ms(10);
 
   uint8_t regs[3] = {
       ODR | LPS22_CTRL_REG1_LPFP_DIV_9,           // REG 1
       LPS22_CTRL_REG2_I2C_DIS | LPS22_IF_ADD_INC, // REG 2
       LPS22_CTRL_REG3_DRDY_EN                     // REG 3
   };
-  ok = comm->write(comm->config, LPS22_CTRL_REG1, regs, 3);
-  if (ok < 0) return NULL;
+  if (comm->write(comm->config, LPS22_CTRL_REG1, regs, sizeof(regs)) < 0) return -1;
 
-  return hw;
+  return 0;
 }
 
-lps22_t lps22_read(lps22_io_t *hw) {
+int lps22_read(lps22_io_t *hw, pt_t *ret) {
+  if (hw == NULL) return GCIS_ERROR_IO_NULL;
   comm_interface_t *comm = hw->comm;
-  uint8_t *sensor_data   = hw->sensor_data;
+  uint8_t *buff   = hw->sensor_data;
 
-  int ok = comm->read(comm->config, LPS22_PRESSURE_OUT_XL, sensor_data, 5);
-  if (ok < 0) {
-    hw->ok      = false;
-    lps22_t ret = {0.0f, 0.0f};
-    return ret;
+  if (comm->read(comm->config, LPS22_PRESSURE_OUT_XL, buff, LPS22_DATA_LEN) < 0) {
+    return -1;
   }
 
-  int32_t p = (int32_t)(uint32_t)sensor_data[0] | ((uint32_t)sensor_data[1] << 8) | ((uint32_t)sensor_data[2] << 16);
-  int32_t t = (int32_t)((uint32_t)sensor_data[3]) | ((uint32_t)sensor_data[4] << 8);
-
-  lps22_t ret = {
-      (float)(p) / 4096.0f, // hPa
-      (float)(t) / 100.0f   // C
-  };
-  hw->ok = true;
-  return ret;
+  ret->pressure = cov_bbb2f(buff[0],buff[1],buff[2]) / 4096.0f; // hPa
+  ret->temperature = cov_bb2f(buff[3],buff[4]) / 100.0f;   // C
+  
+  return 0;
 }
-
-// lps22_io_t *lps22_spi_init(uint8_t port, pin_t cs, uint8_t ODR) {
-//   lps22_io_t *hw = (lps22_io_t *)calloc(1, sizeof(lps22_io_t));
-//   if (hw == NULL) return NULL;
-
-//   comm_interface_t *comm = comm_interface_init(port, cs, SPI_INTERFACE);
-//   if (comm == NULL) return NULL;
-
-//   hw->comm = comm;
-
-//   // printf("> read whoami\n");
-//   uint8_t reg = 0;
-//   int ok = comm->read(comm->config, LPS22_WHO_AM_I_REG, &reg, 1);
-//   // printf("> ok (read bytes): %d id: %d\n", ok, (int)reg); // 0xB1 == 177
-//   if ((reg != LPS22_WHO_AM_I) || (ok < 0)) return NULL;
-//   // printf("> CORRECT whoami\n");
-
-//   // SWRESET - reset regs to default
-//   reg = LPS22_CTRL_REG2_SWRESET;
-//   comm->write(comm->config, LPS22_CTRL_REG2, &reg, 1);
-
-//   // Enable continous, 75Hz, LPF (ODR/9 = 8Hz)
-//   reg = ODR;
-//   reg |= LPS22_CTRL_REG1_LPFP_DIV_9;
-//   comm->write(comm->config, LPS22_CTRL_REG1, &reg, 1);
-
-//   // disable I2C
-//   reg = LPS22_CTRL_REG2_I2C_DIS;
-//   reg |= LPS22_IF_ADD_INC;
-//   comm->write(comm->config, LPS22_CTRL_REG2, &reg, 1);
-
-//   // Enable DRDY on pin when data ready
-//   // CTRL_REG3, INT_H_L, defaults to 0 -> active high
-//   //            PP_OD, defaults to 0 -> push-pull on the pin
-//   reg = LPS22_CTRL_REG3_DRDY_EN;
-//   // reg |= LPS22_CTRL_REG3_INT_S_DRDY;
-//   // reg |= LPS22_CTRL_REG3_OPEN_DRAIN;
-//   comm->write(comm->config, LPS22_CTRL_REG3, &reg, 1);
-
-//   return hw;
-// }
-
-// #define LPS22_INT_SOURCE_PH 0x01
-// #define LPS22_INT_SOURCE_PL 0x02
-// #define LPS22_INT_SOURCE_IA 0x04
-// #define LPS22_INT_SOURCE_BOOT_ON 0x80
-
-// #define LPS22_STATUS_P_DA 0x01
-// #define LPS22_STATUS_T_DA 0x02
-// #define LPS22_STATUS_P_OR 0x10
-// #define LPS22_STATUS_T_OR 0x20

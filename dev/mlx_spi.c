@@ -6,23 +6,37 @@
 #include <stdio.h>
 #include <tusb.h> // wait for USB
 
-#define SCK         2
-#define SDO         3 // data out
-#define SDI         4 // data in
-#define CS          5
-#define INT         15
-#define BUFFER_SIZE 10
+#define PORT 0
+#define SCK  2
+#define SDO  3 // data out
+#define SDI  4 // data in
+#define CS   22
+#define INT  21
+
 // constexpr float M_PIf = 3.14159265358979323846f;
 
 mlx90393_io_t *mag      = NULL;
-volatile bool mag_ready = true;
+volatile bool mag_ready = false;
 
 void callback(uint pin, uint32_t event) {
   if ((pin == INT) && (event & GPIO_IRQ_EDGE_RISE)) mag_ready = true;
-  // printf("> pin: %u   event: %u\n", pin, event);
+  printf("> pin: %u   event: %u\n", pin, event);
 }
 
-void init_mag() {
+int main() {
+
+  stdio_init_all();
+  while (!tud_cdc_connected()) {
+    sleep_ms(100);
+  }
+
+  int32_t speed = gcis_spi0_init(GCIS_SPI_1MHZ, SDI, SDO, SCK);
+
+  printf(">> spi instance: %u baudrate: %d\n", 0, speed);
+  printf(">> spi SDI: %u SDO: %u SCK: %u CS: %u\n", SDO, SDI, SCK, CS);
+  bi_decl(bi_3pins_with_func(SDI, SDO, SCK, GPIO_FUNC_SPI));
+  bi_decl(bi_1pin_with_name(CS, "SPI CS"));
+
   gpio_init(INT);
   gpio_set_dir(INT, GPIO_IN); // Set as input
   gpio_pull_down(INT);
@@ -38,13 +52,11 @@ void init_mag() {
   }
 
   printf("//---- SPI MAGS START -----//\n");
-}
 
-void loop_read_mag() {
-  uint64_t prev = 0;
-  uint64_t cnt  = 0;
-
+  uint64_t delta, now, prev = 0;
+  uint32_t cnt = 0;
   while (1) {
+    // mag_ready = true;
     if (mag_ready) {
       mag_ready = false;
 
@@ -54,8 +66,8 @@ void loop_read_mag() {
         printf("****************\n");
         printf("*** Bad read ***\n");
         printf("****************\n");
-        sleep_ms(1);
-        return;
+        sleep_ms(1000);
+        continue;
       }
 
       uint64_t delta = now - prev;
@@ -64,30 +76,13 @@ void loop_read_mag() {
         printf("-----------------------------\n");
         printf("Mags: %8.3f %8.3f %8.3f g\n", i.x, i.y, i.z);
         printf("Timestamp: %llu msec\n", now);
-        printf("Delta: %llu usec   %llu msec   %.1fHz\n", delta, delta / 1000, 1E6 / (float)delta);
+        printf("Delta: %llu usec   %llu msec   %.1f Hz\n", delta, delta / 1000, 1E6 / (float)delta);
       }
       prev = now;
     }
 
-    sleep_us(10);
+    sleep_ms(1);
   }
-}
-
-int main() {
-  stdio_init_all();
-  while (!tud_cdc_connected()) {
-    sleep_ms(100);
-  }
-
-  uint32_t speed = gcis_spi0_init(GCIS_SPI_10MHZ, SDI, SDO, SCK);
-
-  printf(">> spi instance: %u baudrate: %u\n", 0, speed);
-  printf(">> spi SDI: %u SDO: %u SCK: %u CS: %u\n", SDO, SDI, SCK, CS);
-  bi_decl(bi_3pins_with_func(SDI, SDO, SCK, GPIO_FUNC_SPI));
-  bi_decl(bi_1pin_with_name(CS, "SPI CS"));
-
-  init_mag();
-  loop_read_mag();
 
   return 0;
 }

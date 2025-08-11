@@ -57,16 +57,25 @@ typedef enum : uint8_t {
   QMC5883_64_OSR  = (3 << 6),
 } qmc5883_sample_t;
 
-qmc5883_io_t *qmc5883_init(interface_t type, uint8_t port, qmc5883_range_t range) {
-  int32_t ok;
-  uint8_t cmd;
+qmc5883_io_t *qmc5883_create(uint8_t port) {
   qmc5883_io_t *hw = (qmc5883_io_t *)calloc(1, sizeof(qmc5883_io_t));
   if (hw == NULL) return NULL;
 
   comm_interface_t *comm = comm_interface_init(port, QMC5883L_ADDR, I2C_INTERFACE);
-  if (comm == NULL) return NULL;
+  if (comm == NULL) {
+    free(hw);
+    return NULL;
+  }
 
   hw->comm       = comm;
+  return hw;
+}
+
+int qmc5883_init(qmc5883_io_t *hw, qmc5883_range_t range) {
+  if (hw == NULL) return GCIS_ERROR_IO_NULL;
+  comm_interface_t *comm = hw->comm;
+  uint8_t cmd;
+  
   hw->calibrated = false;
 
   switch (range) {
@@ -77,16 +86,12 @@ qmc5883_io_t *qmc5883_init(interface_t type, uint8_t port, qmc5883_range_t range
     hw->scale = 1.0f / 3000.0f;
     break;
   default:
-    return NULL;
+    return GCIS_ERROR_INIT_VALUE;
   }
 
-  ok = comm->read(comm->config, QMC5883L_WHO_AM_I_REG, &cmd, 1);
-  if ((cmd != QMC5883L_WHO_AM_I) || (ok < 0)) return NULL;
-  printf(">> whoami success! 0x%x\n", cmd);
-
-  ok = comm->read(comm->config, QMC5883L_WHO_AM_I_REG, &cmd, 1);
-  if ((cmd != QMC5883L_WHO_AM_I) || (ok < 0)) return NULL;
-  printf(">> whoami success! 0x%x\n", cmd);
+  if (comm->read(comm->config, QMC5883L_WHO_AM_I_REG, &cmd, 1) < 0) return -1;
+  if (cmd != QMC5883L_WHO_AM_I) return GCIS_ERROR_WHOAMI;
+  // printf(">> whoami success! 0x%x\n", cmd);
 
   // ODR can vary from 0.75 Hz - 75 Hz, default to fastest
   // Config A: 2 (0x01) samples averaged, 75 Hz (0x06) output rate, normal measurement
@@ -95,109 +100,132 @@ qmc5883_io_t *qmc5883_init(interface_t type, uint8_t port, qmc5883_range_t range
   // if (ok < 0) return NULL;
 
   cmd = QMC5883L_SOFT_RESET;
-  ok  = comm->write(comm->config, QMC5883L_CTRL2_REG, &cmd, 1);
-  if (ok < 0) return NULL;
+  if (comm->write(comm->config, QMC5883L_CTRL2_REG, &cmd, 1) < 0) return -1;
 
-  sleep_ms(1000);
+  sleep_ms(10);
 
-  //   >> i2c0 baud: 100000
-  // >> i2c SDA: 4 SCL: 5
-  // /// MAGNETOMETER START ///
-  // >> whoami success! 0xff
-  // >> read ok: 1  reg 0x0B: 0x0
-  // >> wrote ok: 1  cmd: 0x1d
-  // >> read ok: 1  reg 0x9: 0x0
-  // >> start ZH: 0
-  // >> start ok: 1   STATUS_REG: 0
-  // >> start ZH: 0
-  // >> ok: 9   STATUS_REG: 0  overflow: 0
-  // Mags: 0.000000 0.000000 0.000000
-  // Temp: 0.000000 C
-  // >> start ZH: 0
-  // >> start ok: 1   STATUS_REG: 0
-  // >> start ZH: 0
-  // >> ok: 9   STATUS_REG: 0  overflow: 0
-  // Mags: 0.000000 0.000000 0.000000
-  // Temp: 0.000000 C
+  int8_t cfg[] = {
+    0x1D, // 09h: 512_OSR | 200HZ | CONT | 8G
+    0x00, // 0Ah
+    0x01, // 0Bh: WTF? See pg 18 datasheet
+  };
+  if (comm->write(comm->config, 0x09, cfg, sizeof(cfg)) < 0) return -1;
 
-  // WTF
-  cmd = 0x01; // what is this? See pg 18 datasheet
-  ok  = comm->write(comm->config, 0x0B, &cmd, 1);
-  if (ok < 0) return NULL;
+  // // WTF
+  // // cmd = 0x01; // what is this? See pg 18 datasheet
+  // if (comm->write(comm->config, 0x0B, &cmd, 1) < 0) return -1;
 
-  ok = comm->read(comm->config, 0x0B, &cmd, 1);
-  printf(">> read ok: %d  reg %s: 0x%x\n", ok, "0x0B", cmd);
+  // ok = comm->read(comm->config, 0x0B, &cmd, 1);
+  // printf(">> read ok: %d  reg %s: 0x%x\n", ok, "0x0B", cmd);
 
-  // cmd = QMC5883_512_OSR(0x00) | QMC5883_ODR_200HZ(0x0C) | QMC5883_MODE_CONTINUOUS(0x01) | range;
-  // cmd = QMC5883_512_OSR | QMC5883_ODR_10HZ | QMC5883_MODE_CONTINUOUS | QMC5883_8GAUSS;
-  cmd = 0x1D; // 512_OSR | 200HZ | CONT | 8G
-  ok  = comm->write(comm->config, QMC5883L_CTRL1_REG, &cmd, 1);
-  if (ok < 0) return NULL;
-  printf(">> wrote ok: %d  cmd: 0x%x\n", ok, cmd);
+  // // cmd = QMC5883_512_OSR(0x00) | QMC5883_ODR_200HZ(0x0C) | QMC5883_MODE_CONTINUOUS(0x01) | range;
+  // // cmd = QMC5883_512_OSR | QMC5883_ODR_10HZ | QMC5883_MODE_CONTINUOUS | QMC5883_8GAUSS;
+  // cmd = 0x1D; // 512_OSR | 200HZ | CONT | 8G
+  // if (comm->write(comm->config, QMC5883L_CTRL1_REG, &cmd, 1) < 0) return -1;
+  // // printf(">> wrote ok: %d  cmd: 0x%x\n", ok, cmd);
 
-  ok = comm->read(comm->config, QMC5883L_CTRL1_REG, &cmd, 1);
-  printf(">> read ok: %d  reg 0x%x: 0x%x\n", ok, QMC5883L_CTRL1_REG, cmd);
+  // // ok = comm->read(comm->config, QMC5883L_CTRL1_REG, &cmd, 1);
+  // // printf(">> read ok: %d  reg 0x%x: 0x%x\n", ok, QMC5883L_CTRL1_REG, cmd);
 
-  // Config B: Set gain to 1.3 Ga (1090 LSB/Gauss)
-  // cmd = (1 << 6); // auto incr? - no one sets this
-  cmd = 0x00;
-  ok  = comm->write(comm->config, QMC5883L_CTRL2_REG, &cmd, 1);
-  if (ok < 0) return NULL;
+  // // Config B: Set gain to 1.3 Ga (1090 LSB/Gauss)
+  // // cmd = (1 << 6); // auto incr? - no one sets this
+  // cmd = 0x00;
+  // ok  = comm->write(comm->config, QMC5883L_CTRL2_REG, &cmd, 1);
+  // if (ok < 0) return NULL;
 
-  // comm->read(comm->config, 0x04, &cmd, 1);
-  comm->read(comm->config, 0x05, &cmd, 1); // disable lockout?
+  // // comm->read(comm->config, 0x04, &cmd, 1);
+  // comm->read(comm->config, 0x05, &cmd, 1); // disable lockout?
 
-  sleep_ms(1);
+  // sleep_ms(1);
 
-  return hw;
+  return 0;
 }
 
-qmc5883_io_t *qmc5883_i2c_init(uint8_t port, qmc5883_range_t range) {
-  return qmc5883_init(I2C_INTERFACE, port, range);
-}
+// qmc5883_io_t *qmc5883_i2c_init(uint8_t port, qmc5883_range_t range) {
+//   return qmc5883_init(I2C_INTERFACE, port, range);
+// }
 
-qmc5883_io_t *qmc5883_spi_init(uint8_t port, qmc5883_range_t range) {
-  return qmc5883_init(SPI_INTERFACE, port, range);
-}
+// qmc5883_io_t *qmc5883_spi_init(uint8_t port, qmc5883_range_t range) {
+//   return qmc5883_init(SPI_INTERFACE, port, range);
+// }
 
-vec3f_t qmc5883_read(qmc5883_io_t *hw) {
-  vec3f_t ret;
-  hw->ok                 = false;
+int qmc5883_read(qmc5883_io_t *hw, vec3f_t *ret) {
   comm_interface_t *comm = hw->comm;
-  // uint8_t *buf           = hw->buf;
   uint8_t buf[9]; // [XL,XH,YL,YH,ZL,ZH,STATUS,TL,TH]
-  int32_t ok;
-  // uint8_t data[2];
+  // int32_t ok;
   uint8_t status = 0;
 
-  comm->read(comm->config, 0x05, &status, 1);
+  ret->x = 0.0f;
+  ret->y = 0.0f;
+  ret->z = 0.0f;
+
+  if (comm->read(comm->config, 0x05, &status, 1) < 0) return -1;
   printf(">> start ZH: %u\n", status);
 
-  ok = comm->read(comm->config, QMC5883L_STATUS_REG, &status, 1);
-  printf(">> start ok: %d   STATUS_REG: %u\n", ok, (uint32_t)status);
+  if (comm->read(comm->config, QMC5883L_STATUS_REG, &status, 1) < 0) return -1;
+  printf(">> STATUS_REG: %u\n", (uint32_t)status);
 
-  comm->read(comm->config, 0x05, &status, 1);
+  if (comm->read(comm->config, 0x05, &status, 1) < 0) return -1;
   printf(">> start ZH: %u\n", status);
 
   // ok = comm->read(comm->config, QMC5883L_DATA_X_LSB_REG, buf, QMC5883_BUFFER_SIZE);
-  ok = comm->read(comm->config, QMC5883L_DATA_X_LSB_REG, buf, 7);
+  if (comm->read(comm->config, QMC5883L_DATA_X_LSB_REG, buf, 7) < 0) return -1;
   // for (int i=0; i<6; ++i) ok = comm->read(comm->config, QMC5883L_DATA_X_LSB_REG + i, &buf[i], 1);
   // printf(">> ok: %d\n", ok);
-  if (ok < 0) return ret;
+  // if (ok < 0) return ret;
 
   // Combine MSB and LSB
-  ret.x = hw->scale * (float)(((int16_t)buf[1] << 8) | buf[0]);
-  ret.y = hw->scale * (float)(((int16_t)buf[3] << 8) | buf[2]);
-  ret.z = hw->scale * (float)(((int16_t)buf[5] << 8) | buf[4]);
+  ret->x = hw->scale * (float)(((int16_t)buf[1] << 8) | buf[0]);
+  ret->y = hw->scale * (float)(((int16_t)buf[3] << 8) | buf[2]);
+  ret->z = hw->scale * (float)(((int16_t)buf[5] << 8) | buf[4]);
 
-  printf(">> ok: %d   STATUS_REG: %u  overflow: %u\n", ok, (uint32_t)buf[6], buf[6] >> 1);
+  printf(">> STATUS_REG: %u  overflow: %u\n", (uint32_t)buf[6], buf[6] >> 1);
 
   // ret.temperature = (float)(((int16_t)buf[8] << 8) | buf[7]) / 100.0f;
 
-  hw->ok = true;
+  // hw->ok = true;
 
-  return ret;
+  return 0;
 }
+
+// vec3f_t qmc5883_read(qmc5883_io_t *hw) {
+//   vec3f_t ret;
+//   hw->ok                 = false;
+//   comm_interface_t *comm = hw->comm;
+//   // uint8_t *buf           = hw->buf;
+//   uint8_t buf[9]; // [XL,XH,YL,YH,ZL,ZH,STATUS,TL,TH]
+//   int32_t ok;
+//   // uint8_t data[2];
+//   uint8_t status = 0;
+
+//   comm->read(comm->config, 0x05, &status, 1);
+//   printf(">> start ZH: %u\n", status);
+
+//   ok = comm->read(comm->config, QMC5883L_STATUS_REG, &status, 1);
+//   printf(">> start ok: %d   STATUS_REG: %u\n", ok, (uint32_t)status);
+
+//   comm->read(comm->config, 0x05, &status, 1);
+//   printf(">> start ZH: %u\n", status);
+
+//   // ok = comm->read(comm->config, QMC5883L_DATA_X_LSB_REG, buf, QMC5883_BUFFER_SIZE);
+//   ok = comm->read(comm->config, QMC5883L_DATA_X_LSB_REG, buf, 7);
+//   // for (int i=0; i<6; ++i) ok = comm->read(comm->config, QMC5883L_DATA_X_LSB_REG + i, &buf[i], 1);
+//   // printf(">> ok: %d\n", ok);
+//   if (ok < 0) return ret;
+
+//   // Combine MSB and LSB
+//   ret.x = hw->scale * (float)(((int16_t)buf[1] << 8) | buf[0]);
+//   ret.y = hw->scale * (float)(((int16_t)buf[3] << 8) | buf[2]);
+//   ret.z = hw->scale * (float)(((int16_t)buf[5] << 8) | buf[4]);
+
+//   printf(">> ok: %d   STATUS_REG: %u  overflow: %u\n", ok, (uint32_t)buf[6], buf[6] >> 1);
+
+//   // ret.temperature = (float)(((int16_t)buf[8] << 8) | buf[7]) / 100.0f;
+
+//   hw->ok = true;
+
+//   return ret;
+// }
 
 // QMC5883L I2C address and register definitions
 

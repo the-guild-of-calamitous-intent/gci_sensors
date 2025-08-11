@@ -1,23 +1,25 @@
 LIST(APPEND examples
-    # sox_spi
+    sox_spi
     # sox_spi_alt
     # sox_spi_core1
     # sox_i2c
     # bmp390_i2c
-    # bmp390_spi
+    bmp390_spi
     # lis3mdl_i2c
+    lis2mdl_spi
     # gps
     # interrupt
     # lps22_spi
     # qmc5883_i2c
-    mlx_spi
+    # mlx_spi
 )
 
 foreach(app ${examples})
     add_executable(${app} ${app}.c)
     target_link_libraries(${app} PUBLIC
         ${PROJECT_NAME}
-        pico_multicore
+        ${pico_libs}
+        # pico_multicore
     )
 
     # Set stdio functions to use USB rather than the serial ports

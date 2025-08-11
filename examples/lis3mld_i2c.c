@@ -35,8 +35,8 @@ int main() {
   while (true) {
     sleep_ms(5); // ~200 Hz
 
-    vec3f_t m = lis3mdl_read(mag);
-    if (mag->ok == false) {
+    vec3f_t m;
+    if (lis3mdl_read(mag, &m) < 0) {
       printf("*** bad reading ***\n");
       continue;
     }

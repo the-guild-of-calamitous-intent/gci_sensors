@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////
 //  The MIT License (MIT)
-//  Copyright (c) 2023 Kevin Walchko
+//  Copyright (c) 2022 Kevin Walchko
 //  see LICENSE for full details
 ////////////////////////////////////////////////
 #pragma once
@@ -29,6 +29,15 @@ typedef struct {
   float pressure;
   float temperature;
 } pt_t;
+#endif
+
+#ifndef __IMU__
+  #define __IMU__
+typedef struct {
+  vec3f_t a;
+  vec3f_t g;
+  float temperature;
+} imuf_t;
 #endif
 
 #if defined __cplusplus

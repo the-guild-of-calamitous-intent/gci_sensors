@@ -44,19 +44,26 @@ bool lis3mdl_ready(lis3mdl_io_t *hw) {
   return (val & STATUS_ZYXDA) > 0;
 }
 
-// RANGE_4GAUSS, ODR_155HZ
-static lis3mdl_io_t *lis3mdl_init(interface_t type, uint8_t port, uint8_t addr_cs, lis3mdl_range_t range, lis3mdl_odr_t odr) {
-  uint8_t id = 0;
-  int32_t ok;
-  uint8_t cmd;
-
+lis3mdl_io_t *lis3mdl_create(interface_t type, uint8_t port, uint8_t addr_cs) {
   lis3mdl_io_t *hw = (lis3mdl_io_t *)calloc(1, sizeof(lis3mdl_io_t));
   if (hw == NULL) return NULL;
 
   comm_interface_t *comm = comm_interface_init(port, addr_cs, type);
-  if (comm == NULL) return NULL;
+  if (comm == NULL) {
+    free(hw);
+    return NULL;
+  }
 
   hw->comm = comm;
+  return hw;
+}
+
+// RANGE_4GAUSS, ODR_155HZ
+int lis3mdl_init(lis3mdl_io_t *hw, lis3mdl_range_t range, lis3mdl_odr_t odr) {
+  if (hw == NULL) return GCIS_ERROR_IO_NULL;
+  comm_interface_t *comm = hw->comm;
+  uint8_t id = 0;
+  uint8_t cmd;
 
   float sm[12] = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
   memcpy(hw->sm, sm, 12 * sizeof(float));
@@ -78,17 +85,17 @@ static lis3mdl_io_t *lis3mdl_init(interface_t type, uint8_t port, uint8_t addr_c
   case LIS3MDL_RANGE_16GAUSS:
     hw->scale = 100.0f / 1711.0f;
     break;
+  default:
+    return GCIS_ERROR_INIT_VALUE;
   }
 
-  ok = comm->read(comm->config, REG_WHO_AM_I, &id, 1);
-  if (ok < 0) return NULL;
-  if (id != WHO_AM_I) return NULL; // ERROR_WHOAMI;
+  if (comm->read(comm->config, REG_WHO_AM_I, &id, 1) < 0) return -1;
+  if (id != WHO_AM_I) return GCIS_ERROR_WHOAMI;
 
   // clear memory
   cmd = 0x04; // SOFT_RESET
-  ok  = comm->write(comm->config, REG_CTRL_REG2, &cmd, 1);
-  if (ok < 0) return NULL;
-  sleep_ms(100);
+  if (comm->write(comm->config, REG_CTRL_REG2, &cmd, 1) < 0) return -1;
+  sleep_ms(10);
 
   uint8_t data[5] = {
       LIS3MDL_FAST_ODR_EN | (odr << 5), // CTRL1, set x,y ODR
@@ -98,8 +105,7 @@ static lis3mdl_io_t *lis3mdl_init(interface_t type, uint8_t port, uint8_t addr_c
       0x00                              // CTRL5, BDU(0x40)
   };
 
-  ok = comm->write(comm->config, REG_CTRL_REG1, data, 5);
-  if (ok < 0) return NULL;
+  if (comm->write(comm->config, REG_CTRL_REG1, data, sizeof(data)) < 0) return -1;
 
   // // uint8_t reg1 = LIS3MDL_FAST_ODR_EN | LIS3MDL_TEMP_EN | (odr << 5);
   // // if (!writeRegister(REG_CTRL_REG1, reg1))
@@ -137,16 +143,16 @@ static lis3mdl_io_t *lis3mdl_init(interface_t type, uint8_t port, uint8_t addr_c
   // ok = comm->write(comm->config, REG_CTRL_REG5, &cmd, 1);
   // if (ok < 0) return NULL;
 
-  return hw;
+  return 0;
 }
 
-lis3mdl_io_t *lis3mdl_i2c_init(uint8_t port, uint8_t addr, lis3mdl_range_t range, lis3mdl_odr_t odr) {
-  return lis3mdl_init(I2C_INTERFACE, port, addr, range, odr);
-}
+// lis3mdl_io_t *lis3mdl_i2c_init(uint8_t port, uint8_t addr, lis3mdl_range_t range, lis3mdl_odr_t odr) {
+//   return lis3mdl_init(I2C_INTERFACE, port, addr, range, odr);
+// }
 
-lis3mdl_io_t *lis3mdl_spi_init(uint8_t port, pin_t cs, lis3mdl_range_t range, lis3mdl_odr_t odr) {
-  return lis3mdl_init(SPI_INTERFACE, port, cs, range, odr);
-}
+// lis3mdl_io_t *lis3mdl_spi_init(uint8_t port, pin_t cs, lis3mdl_range_t range, lis3mdl_odr_t odr) {
+//   return lis3mdl_init(SPI_INTERFACE, port, cs, range, odr);
+// }
 
 // bool reboot() { return writeBits(REG_CTRL_REG1, 0x01, 1, 3); } // reboot
 // memory content bool reset() { return writeBits(REG_CTRL_REG1, 0x01, 1, 2);
@@ -171,34 +177,17 @@ bool lis3mdl_reboot(lis3mdl_io_t *hw) {
   return true;
 }
 
-// static inline float cov_bb2f(uint8_t lo, uint8_t hi) {
-//   return (float)((int16_t)((uint16_t)hi << 8) | lo);
-// }
-
-const vec3f_t lis3mdl_read(lis3mdl_io_t *hw) {
+int lis3mdl_read(lis3mdl_io_t *hw, vec3f_t *ret) {
   comm_interface_t *comm = hw->comm;
-  vec3f_t ret          = {0.0f, 0.0f, 0.0f};
-  int32_t ok             = 0;
-  hw->ok                 = false;
-
-  // uint8_t buf[MAG_BUFFER_SIZE];
   uint8_t *buf = hw->buffer;
 
   // if (lis3mdl_ready(hw) == false) return ret;
 
-  // if (!readRegisters(REG_OUT_X_L, READ_MAG, buff.b)) return ret;
-  // ok = gci_i2c_read(hw->i2c, hw->addr, REG_OUT_X_L, hw->buff.b, MAG_BUFFER_SIZE);
-  // ok = comm->read(comm->config, REG_OUT_X_L, hw->buff.b, MAG_BUFFER_SIZE);
-  ok = comm->read(comm->config, REG_OUT_X_L, buf, MAG_BUFFER_SIZE);
-  if (ok < 0) return ret;
+  if (comm->read(comm->config, REG_OUT_X_L, buf, LIS3MDL_BUFFER_SIZE) < 0) return -1;
 
-  ret.x = hw->scale * cov_bb2f(buf[0], buf[1]); // gauss
-  ret.y = hw->scale * cov_bb2f(buf[2], buf[3]);
-  ret.z = hw->scale * cov_bb2f(buf[4], buf[5]);
-
-  // ret.x = hw->scale * (float)hw->buff.s.x; // gauss
-  // ret.y = hw->scale * (float)hw->buff.s.y;
-  // ret.z = hw->scale * (float)hw->buff.s.z;
+  ret->x = hw->scale * cov_bb2f(buf[0], buf[1]); // gauss
+  ret->y = hw->scale * cov_bb2f(buf[2], buf[3]);
+  ret->z = hw->scale * cov_bb2f(buf[4], buf[5]);
 
   // BROKEN????
   // ((float_t)lsb / 8.0f) + (25.0f);
@@ -209,9 +198,9 @@ const vec3f_t lis3mdl_read(lis3mdl_io_t *hw) {
 
   // normalize mag readings
   // if (!ret.normalize()) return ret;
-  hw->ok = true;
+  // hw->ok = true;
 
-  return ret;
+  return 0;
 }
 
 // const vec3f_t lis3mdl_read_cal(lis3mdl_i2c_t *hw) {

@@ -12,7 +12,7 @@ include(${PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 # Set project name and language
 project(gci_sensors C CXX ASM)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_C_STANDARD 23) # Options: 90, 99, 11, 17, 23 (or gnu90, gnu99, etc.)
+set(CMAKE_C_STANDARD 11) # Options: 90, 99, 11, 17, 23 (or gnu90, gnu99, etc.)
 # set(CMAKE_C_STANDARD_REQUIRED ON) # Enforce the standard
 # set(CMAKE_C_EXTENSIONS OFF) # Disable GNU extensions (optional, use ON for gnuXX)
 
@@ -58,20 +58,22 @@ LIST(APPEND pico_libs
   pico_stdlib
   hardware_i2c
   hardware_spi
+  hardware_irq
 )
 
 add_library(${PROJECT_NAME}
   src/algorithms.c
   src/bmp390.c
-  src/qmc5883.c
   src/io-common.c
   src/io-i2c.c
   src/io-spi.c
+  src/lis2mdl.c
   src/lis3mdl.c
   src/lps22.c
   src/lsm6dsox.c
+  # src/mlx90393.c
   src/pa1010d.c
-  src/mlx90393.c
+  src/qmc5883.c
 )
 target_include_directories(${PROJECT_NAME} 
   PUBLIC 
@@ -83,8 +85,8 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 
-pico_enable_stdio_usb(${PROJECT_NAME} 1)
-pico_enable_stdio_uart(${PROJECT_NAME} 0)
+# pico_enable_stdio_usb(${PROJECT_NAME} 1)
+# pico_enable_stdio_uart(${PROJECT_NAME} 0)
 
 
 if (BUILD_EXAMPLES)

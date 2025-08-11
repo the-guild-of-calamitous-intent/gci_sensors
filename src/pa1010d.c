@@ -9,22 +9,21 @@ static inline bool ascii_nema(const char c) {
   return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || c == '*' || c == ',' || c == '.';
 }
 
-pa1010d_io_t *pa1010d_i2c_init(uint32_t port) {
-  uint8_t id = 0;
-  int32_t ok;
-
+pa1010d_io_t *pa1010d_create(uint32_t port) {
   pa1010d_io_t *hw = (pa1010d_io_t *)calloc(1, sizeof(pa1010d_io_t));
   if (hw == NULL) return NULL;
 
   comm_interface_t *comm = comm_interface_init(port, PA1010D_ADDRESS, I2C_INTERFACE);
-  if (comm == NULL) return NULL;
-
+  if (comm == NULL) {
+    free(hw);
+    return NULL;
+  }
   hw->comm = comm;
-
   return hw;
 }
 
 int32_t pa1010d_write(pa1010d_io_t *hw, const uint8_t *command, uint16_t cmd_size) {
+  if (hw == NULL) return -1;
   comm_interface_t *comm = hw->comm;
   // return i2c_write_blocking(hw->i2c, hw->addr, command, cmd_size, false);
   // return writeRegister(addr, cmd_size, (uint8_t*)command) ? 0 : 1;
@@ -34,6 +33,7 @@ int32_t pa1010d_write(pa1010d_io_t *hw, const uint8_t *command, uint16_t cmd_siz
 // Get message from GPS and return the message string
 // with '\0' appended to end
 int32_t pa1010d_read(pa1010d_io_t *hw, char buff[], const uint16_t buff_size) {
+  if (hw == NULL) return -1;
   size_t i               = 0;
   size_t j               = 0;
   char c                 = 0;

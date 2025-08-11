@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdio.h>
 
 #include "gci_sensors/mlx90393.h"
 
@@ -17,18 +18,58 @@
 
 // Register map.
 typedef enum {
+  MLX90393_REG_NOP = (0x00), // NOP.
   MLX90393_REG_SB  = (0x10), // Start burst mode.
   MLX90393_REG_SW  = (0x20), // Start wakeup on change mode.
   MLX90393_REG_SM  = (0x30), // Start single-meas mode.
   MLX90393_REG_RM  = (0x40), // Read measurement.
   MLX90393_REG_RR  = (0x50), // Read register.
   MLX90393_REG_WR  = (0x60), // Write register.
-  MLX90393_REG_EX  = (0x80), // Exit moode.
-  MLX90393_REG_HR  = (0xD0), // Memory recall.
   MLX90393_REG_HS  = (0x70), // Memory store.
+  MLX90393_REG_EX  = (0x80), // Exit mode.
+  MLX90393_REG_HR  = (0xD0), // Memory recall.
   MLX90393_REG_RT  = (0xF0), // Reset.
-  MLX90393_REG_NOP = (0x00), // NOP.
 } mlx90393_cmds_t;
+
+// 10 types of commands (pg 22 datasheet)
+// -------------------------------------------
+// SB: burst mode
+//   SDO <0x10>< 0x00 >
+//   SDI < xx ><Status>
+// SW: wake on change
+//   SDO <0x20>< 0x00 >
+//   SDI < xx ><Status>
+// SM: single measurement
+//   SDO <0x30>< 0x00 >
+//   SDI < xx ><Status>
+// EX: exit
+//   note: wait 1 msec after issue
+//   SDO <0x80>< 0x00 >
+//   SDI < xx ><Status>
+// HR: memory recall
+//   SDO <0xD0>< 0x00 >
+//   SDI < xx ><Status>
+// HS: memory store
+//   SDO <0x70>< 0x00 >
+//   SDI < xx ><Status>
+// RT: reset
+//   note: issue EX first and wait 1 msec
+//   SDO <0xF0>< 0x00 >
+//   SDI < xx ><Status>
+// RM: read measurement
+//   SDO <0x40>< 0x00 >< 0x00>< 0x00><0><0>...
+//   SDI < xx ><Status><T_MSB><T_LSB><X><Y>...
+// RR: read register
+//   SDO <0x50><(addr<<2)>< 0x00 >< 0 >< 0 >
+//   SDI < xx ><    xx   ><Status><MSB><LSB>
+// WR: write register
+//   SDO <0x60><MSB><LSB><(addr<<2)>< 0x00 >
+//   SDI < xx >< xx>< xx><    xx   ><Status>
+
+// Subset I use
+// SB, EX, RT: write_status
+// RM: write_status, normal read
+// RR: write_status
 
 // Gain settings for CONF1 register.
 typedef enum {
@@ -141,14 +182,18 @@ static const float mlx90393_tconv[8][4] = {
 
 // #define CMD_READ_REGISTER 0x50
 // #define CMD_WRITE_REGISTER 0x60
-// read:  <0x50><REG<<2><DH><DL><0x00>
-// write: <0x60><DH><DL><REG<<2><0x00>
+// read:  <0x50><(REG<<2)><DH><DL><0x00>
+// write: <0x60><DH><DL><(REG<<2)><0x00>
 mlx90393_io_t *mlx90393_init(interface_t type, uint8_t port, uint8_t addr_cs) {
   mlx90393_io_t *hw = (mlx90393_io_t *)calloc(1, sizeof(mlx90393_io_t));
   if (hw == NULL) return NULL;
 
   comm_interface_t *comm = comm_interface_init(port, addr_cs, type);
   if (comm == NULL) return NULL;
+  if (type == SPI_INTERFACE) {
+    comm->read  = spi_read_status;
+    comm->write = spi_write_status;
+  }
 
   hw->comm = comm;
 
@@ -158,30 +203,31 @@ mlx90393_io_t *mlx90393_init(interface_t type, uint8_t port, uint8_t addr_cs) {
   uint8_t nop       = 0x00;
   int result        = 0;
   uint8_t config[3] = {
-      0x00, // bist diabled=0
-      0x5C, // gain_sel=5, hall=default // zseries=0,gain=5,hallconf=0
-      0x00  // addr(0x00 << 2)
+      0x00,     // bist diabled=0
+      0x5C,     // gain_sel=5, hall=default // zseries=0,gain=5,hallconf=0
+      0x00 << 2 // addr
   };
 
   result = comm->write(comm->config, 0x60, config, 3); // write
   if (result < 0) return NULL;
-  result = comm->read(comm->config, 0x00, &nop, 1);
+  // result = comm->read(comm->config, 0x00, &nop, 1);
   // if (result < 0) return NULL;
 
-  config[0] = 0x02; // osr2=0, res_z=1, res_y=0
-  config[1] = 0xB4; // res_y=1,res_x=01,dig_filt=101,osr=0
-  config[2] = 0x08; // addr(0x02 << 2)
+  config[0] = 0x02;      // osr2=0, res_z=1, res_y=0
+  config[1] = 0xB4;      // res_y=1,res_x=01,dig_filt=101,osr=0
+  config[2] = 0x02 << 2; // addr
 
   result = comm->write(comm->config, 0x60, config, 3); // write
   if (result < 0) return NULL;
-  result = comm->read(comm->config, 0x00, &nop, 1);
+  // result = comm->read(comm->config, 0x00, &nop, 1);
   // if (result < 0) return NULL;
 
-  config[0] = 0x0F; // enable all axes
+  config[0] = 0x00; // enable all axes
 
-  result = comm->write(comm->config, 0x10, config, 1); // burst mode
+  // start burst (0x10) and zyxt (0x0F) or zyx0 (0xE - no temp)
+  result = comm->write(comm->config, 0x1E, config, 0); // burst mode
   if (result < 0) return NULL;
-  result = comm->read(comm->config, 0x00, &nop, 1);
+  // result = comm->read(comm->config, 0x00, &nop, 1);
 
   // if (!exitMode())
   //   return false;
@@ -247,6 +293,7 @@ vec3f_t mlx90393_read(mlx90393_io_t *hw) {
   int16_t xi, yi, zi;
   vec3f_t ret;
   uint8_t arg = 0x00;
+  hw->ok      = false;
   // uint8_t tx[1] = {MLX90393_REG_RM | MLX90393_AXIS_ALL};
   // uint8_t rx[6] = {0};
 
@@ -259,6 +306,7 @@ vec3f_t mlx90393_read(mlx90393_io_t *hw) {
   // }
 
   result = comm->read(comm->config, MLX90393_REG_RM | MLX90393_AXIS_ALL, hw->buffer, MLX90393_BUFFER_SIZE);
+  // printf(">> mlx_90393_read: %d\n", result);
   if (result < 0) return ret;
 
   /* Convert data to uT and float. */
@@ -285,6 +333,8 @@ vec3f_t mlx90393_read(mlx90393_io_t *hw) {
   ret.x = (float)xi * mlx90393_lsb_lookup[0][_gain][_res][0];
   ret.y = (float)yi * mlx90393_lsb_lookup[0][_gain][_res][0];
   ret.z = (float)zi * mlx90393_lsb_lookup[0][_gain][_res][1];
+
+  hw->ok = true;
 
   return ret;
 }

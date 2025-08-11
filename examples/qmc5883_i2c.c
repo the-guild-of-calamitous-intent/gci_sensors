@@ -27,8 +27,7 @@ int main() {
 
   qmc5883_io_t *mag = NULL;
   while (true) {
-    mag = qmc5883_i2c_init(0, QMC5883_8GAUSS);
-    if (mag != NULL) break;
+    if(qmc5883_i2c_init(mag, 0, QMC5883_8GAUSS) == 0) break;
     printf("*** Couldn't initalize QMC5883 ***\n");
     sleep_ms(1000);
   }
@@ -36,8 +35,8 @@ int main() {
   while (true) {
     sleep_ms(2000);
 
-    vec3f_t m = qmc5883_read(mag);
-    if (mag->ok == false) {
+    vec3f_t m;
+    if (qmc5883_read(mag, &m) < 0){
       printf("*** bad reading ***\n");
       continue;
     }

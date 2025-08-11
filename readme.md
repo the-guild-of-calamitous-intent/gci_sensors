@@ -22,7 +22,9 @@ screen /dev/tty.usbmodemxxxx # ctrl-a ctrl-d to exit
   - LSM6DSOX or LSM6DSO (no ML core)
 - Magnetometer
   - LIS3MDL
+  - LIS2MDL
   - QMC5883L
+  - MLX90393 (not working)
 - GPS
   - PA1010D (I2C only)
 - Pressure/Temperature
@@ -46,7 +48,7 @@ int32_t sensor_write(sensor_io_t* hw, uint8_t reg, uint8_t* buffer, uint8_t leng
 |-------------|-----------------|--------------|
 | Accels      | gravity         | g
 | Gyros       | degrees/sec     | dps
-| Mags        | gauss           | gs
+| Mags        | gauss           | G
 | Temperature | Celcius         | C
 | Pressure    | Pascal          | Pa
 | Altitude    | meter           | m
@@ -57,29 +59,41 @@ int32_t sensor_write(sensor_io_t* hw, uint8_t reg, uint8_t* buffer, uint8_t leng
 ## Generic API
 
 - Naming convention
-  - `<sensor>_t` is the output, contains sensor readings
-  - `<sensor>_io_t` is the generic information to interface
-    with the sensor via I2C or SPI
-    - Errors are captured in each `<sensor>_io_t`
-      - `bool ok`: true-ok, false-error
-      - `int errnum`: error number
+  - `<sensor>_io_t` is the generic 
+  information to interface with the sensor via `I2C` or `SPI`
+    - `type`: `SPI_INTERFACE` or `I2C_INTERFACE`
   - Functions are generally named `return_type <sensor>_<action>(args)`
     - `<action>`s can be `init`, `read`, `write`, etc
-    - `return_type` can be `int`, `void`, `<sensor>_t`, etc
+    - `return_type` can be `int` or `void`
     - `int` return is typically:
       - `0`: success
       - `>0`: success or baudrate or data read/written
       - `<0`: error
 
+```c
+#define PORT 0
+#define CS 11
+
+sensor_io_t *hw = NULL;
+hw = sensor_create(SPI_INTERFACE, PORT, CS);
+if (hw == NULL) printf("crap\n");
+if (sensor_init(hw, ... args ...) < 0) printf("crap\n");
+
+vec3f_t data; // this depends on sensor
+if (sensor_read(hw, &data) < 0) printf("crap\n");
+printf("sensor readings: %f\n", data.x);
+```
+
 ## ToDo
 
 - [ ] Make I2C or SPI interface for all sensors
-  - [ ] bmp390
-  - [ ] lps22
-  - [ ] lsm6dsox
-  - [ ] pa1010d
-  - [ ] qmc5883l
-- [ ] Add a `<sensor>_setmode(...)` for sensors
+  - [x] bmp390
+  - [x] lps22 (SPI only)
+  - [x] lsm6dsox
+  - [x] pa1010d (I2C only)
+  - [x] qmc5883l (I2C only)
+  - [ ] lis3mdl
+  - [ ] lis2mdl
 - [ ] For completeness, add a `<sensor>_free(...)` for sensors
 - [x] Remove external libraries
 - [ ] Add linux support

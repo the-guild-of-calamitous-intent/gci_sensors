@@ -1,3 +1,8 @@
+////////////////////////////////////////////////
+//  The MIT License (MIT)
+//  Copyright (c) 2022 Kevin Walchko
+//  see LICENSE for full details
+////////////////////////////////////////////////
 #pragma once
 
 #include <stdbool.h>
@@ -23,7 +28,7 @@ typedef struct {
   float mcal[12];                   // scale/bias
   uint8_t buf[QMC5883_BUFFER_SIZE]; // used for reading
   bool calibrated;
-  bool ok;
+  // bool ok;
 } qmc5883_io_t;
 
 // typedef struct {
@@ -31,9 +36,10 @@ typedef struct {
 //   float temperature;
 // } vec3f_t;
 
-qmc5883_io_t *qmc5883_i2c_init(uint8_t port, qmc5883_range_t range);
-qmc5883_io_t *qmc5883_spi_init(uint8_t port, qmc5883_range_t range);
-vec3f_t qmc5883_read(qmc5883_io_t *hw);
+qmc5883_io_t *qmc5883_create(uint8_t port);
+int qmc5883_init(qmc5883_io_t *hw, qmc5883_range_t range);
+// vec3f_t qmc5883_read(qmc5883_io_t *hw);
+int qmc5883_read(qmc5883_io_t *hw, vec3f_t *v);
 
 #if defined __cplusplus
 }

@@ -18,7 +18,7 @@ extern "C" {
 // - INT: configurable to different things - not useful to me
 // - DRDY: goes low when data is ready
 
-#define MAG_BUFFER_SIZE 6
+#define LIS3MDL_BUFFER_SIZE 6
 #define LIS3MDL_ADDRESS 0x1C
 #define LIS3MDL_ADDRESS_ALT 0x1E
 
@@ -42,17 +42,14 @@ typedef enum : uint8_t {
 
 typedef struct {
   comm_interface_t *comm;
-  uint8_t buffer[MAG_BUFFER_SIZE];
+  uint8_t buffer[LIS3MDL_BUFFER_SIZE];
   float sm[12];
   float scale;
-  bool ok;
 } lis3mdl_io_t;
 
-lis3mdl_io_t *lis3mdl_spi_init(uint8_t port, pin_t cs, lis3mdl_range_t range,
-                               lis3mdl_odr_t odr);
-lis3mdl_io_t *lis3mdl_i2c_init(uint8_t port, uint8_t addr,
-                               lis3mdl_range_t range, lis3mdl_odr_t odr);
-const vec3f_t lis3mdl_read(lis3mdl_io_t *hw);
+lis3mdl_io_t *lis3mdl_create(interface_t type, uint8_t port, uint8_t addr_cs);
+int lis3mdl_init(lis3mdl_io_t *hw, lis3mdl_range_t range, lis3mdl_odr_t odr);
+int lis3mdl_read(lis3mdl_io_t *hw, vec3f_t *mag);
 bool lis3mdl_reboot(lis3mdl_io_t *hw);
 bool lis3mdl_ready(lis3mdl_io_t *hw);
 

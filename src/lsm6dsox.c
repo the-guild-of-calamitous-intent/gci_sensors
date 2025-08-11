@@ -18,57 +18,54 @@
 #define REG_OUT_TEMP_L 0x20 // termperature
 
 ////////////////////////////////////////////////////////////////////////////////
+// static void lsm6dsox_free(lsm6dsox_io_t *hw) {
+//   if (hw == NULL) return;
+//   if (hw->comm != NULL) free(hw->comm);
+//   if (hw != NULL) free(hw);
+// }
 
-static lsm6dsox_io_t *lsm6dsox_init(interface_t type, uint8_t port, uint8_t addr_cs, lsm6dsox_xl_range_t accel_range, lsm6dsox_g_range_t gyro_range, lsm6dsox_odr_t odr) {
-  int err      = 0;
-  uint8_t data = 0;
-
+lsm6dsox_io_t *lsm6dsox_create(interface_t type, uint8_t port, uint8_t addr_cs) {
   lsm6dsox_io_t *hw = (lsm6dsox_io_t *)calloc(1, sizeof(lsm6dsox_io_t));
   if (hw == NULL) return NULL;
 
   comm_interface_t *comm = comm_interface_init(port, addr_cs, type);
   if (comm == NULL) {
-    hw->ok     = false;
-    hw->errnum = LSM6DSOX_ERROR_COMM_IF_FAIL;
-    return hw;
+    free(hw);
+    return NULL;
   }
-
   hw->comm = comm;
-  hw->ok   = false;
+  return hw;
+}
+
+int lsm6dsox_init(lsm6dsox_io_t *hw, lsm6dsox_xl_range_t accel_range, lsm6dsox_g_range_t gyro_range, lsm6dsox_odr_t odr) {
+  if (hw == NULL) return GCIS_ERROR_IO_NULL;
+  int err      = 0;
+  uint8_t data = 0;
+  comm_interface_t *comm = hw->comm;
 
   // printf("> check whoami\n");
-  err = comm->read(comm->config, REG_WHO_AM_I, &data, 1);
-  printf("> whoami read REG, data: %d num read: %d bytes\n", (int)data, err);
-  if ((data != WHO_AM_I) || (err < 0)) {
-    hw->errnum = LSM6DSOX_ERROR_WHOAMI;
-    return hw;
-  }
+  if (comm->read(comm->config, REG_WHO_AM_I, &data, 1) < 0) return -1;
+  // printf("> whoami: %u = %u    num read: %d bytes\n", data, WHO_AM_I, err);
+  if (data != WHO_AM_I) return GCIS_ERROR_WHOAMI;
 
   // reset everything to default
   data = 0x01; // CTRL3_C SW_RESET ... sets it to default values
-  comm->write(comm->config, 0x12, &data, 1);
-  sleep_ms(10);
-  // hw->ok = true;
-  // return hw;
+  if (comm->write(comm->config, 0x12, &data, 1) < 0) return -1;
+  sleep_ms(3);
+  // printf("> reset done\n");
 
   if (accel_range == LSM6DSOX_XL_2_G) hw->a_scale = 2.0f / 32768.0f;
   else if (accel_range == LSM6DSOX_XL_4_G) hw->a_scale = 4.0f / 32768.0f;
   else if (accel_range == LSM6DSOX_XL_8_G) hw->a_scale = 8.0f / 32768.0f;
   else if (accel_range == LSM6DSOX_XL_16_G) hw->a_scale = 16.0f / 32768.0f;
-  else {
-    hw->errnum = LSM6DSOX_ERROR_XL;
-    return hw;
-  }
+  else return GCIS_ERROR_INIT_VALUE;
 
   if (gyro_range == LSM6DSOX_G_125_DPS) hw->g_scale = 125.0f / 32768.0f;
   else if (gyro_range == LSM6DSOX_G_250_DPS) hw->g_scale = 250.0f / 32768.0f;
   else if (gyro_range == LSM6DSOX_G_500_DPS) hw->g_scale = 500.0f / 32768.0f;
   else if (gyro_range == LSM6DSOX_G_1000_DPS) hw->g_scale = 1000.0f / 32768.0f;
   else if (gyro_range == LSM6DSOX_G_2000_DPS) hw->g_scale = 2000.0f / 32768.0f;
-  else {
-    hw->errnum = LSM6DSOX_ERROR_G;
-    return hw;
-  }
+  else return GCIS_ERROR_INIT_VALUE;
 
   // Assume Mode 1: sensor -> I2C/SPI -> uC
   //
@@ -99,8 +96,8 @@ static lsm6dsox_io_t *lsm6dsox_init(interface_t type, uint8_t port, uint8_t addr
   // CTRL9_XL   | 0xD0
   // CTRL10_C   | 0x00
 
-#define INT1_DRDY_G 0x02 // 0x02: G ready
-#define INT2_DRDY_A 0x01 // 0x01: XL ready, 0x00: disable INT2
+#define INT1_DRDY_G  0x02 // 0x02: G ready
+#define INT2_DRDY_XL 0x01 // 0x01: XL ready, 0x00: disable INT2
   // reg 07-0E
   uint8_t blk0[8] = {
       0x00,        // FIFO 1 (default)
@@ -110,7 +107,7 @@ static lsm6dsox_io_t *lsm6dsox_init(interface_t type, uint8_t port, uint8_t addr
       0x00,        // counter bdr reg 1 (default)
       0x00,        // counter bdr reg 2 (default)
       INT1_DRDY_G, // INT1 - DRDY Gyro
-      INT2_DRDY_A  // INT2 - DRDY Accel
+      INT2_DRDY_XL // INT2 - DRDY Accel
   };
 
   // GYRO Filtering (Fig 19)
@@ -140,17 +137,18 @@ static lsm6dsox_io_t *lsm6dsox_init(interface_t type, uint8_t port, uint8_t addr
   //                       |  |          |          |
   //                       +->|    1     | -> LPF2 -+
 
-#define HP_EN_G    0x00                              // G disable HPF
-#define LPF1_SEL_G 0x00                              // G turn off LPF1, only use LPF2
-#define LPF2_XL_EN 0x00                              // turn off LPF2 for XL
-#define IF_INC     0x04                              // 0x04: auto incr pointer on read reg
-#define G_BW       0x03                              // 0x03: FTYPE, LPF1 highest BW - Don't care, disabled
-#define I2C_EN     ((type == I2C_INTERFACE) ? 0 : 4) // 0: enable, 4: disable
-#define BDU        0x40                              // 0x00: continuous, 0x40: not updated until read
-#define PP_OD      0x00                              // 0x00: push-pull mode ... this is what I want
-#define I3C_DIS    0x02                              // 0x02: disable I3C
-#define DEN        0xD0                              // 0xD0: DEN ... don't use, but is default
-#define TS_DIS     0x00                              // timestamp EN: 0x20, DIS: 0x00
+  #define HP_EN_G    0x00                              // G disable HPF
+  #define LPF1_SEL_G 0x00                              // G turn off LPF1, only use LPF2
+  #define LPF2_XL_EN 0x00                              // turn off LPF2 for XL
+  #define IF_INC     0x04                              // 0x04: auto incr pointer on read reg
+  #define G_BW       0x03                              // 0x03: FTYPE, LPF1 highest BW - Don't care, disabled
+  #define BDU        0x40                              // 0x00: continuous, 0x40: not updated until read
+  #define PP_OD      0x00                              // 0x00: push-pull mode ... this is what I want
+  #define I3C_DIS    0x02                              // 0x02: disable I3C
+  #define DEN        0xD0                              // 0xD0: DEN ... don't use, but is default
+  #define TS_DIS     0x00                              // timestamp EN: 0x20, DIS: 0x00
+  
+  const uint8_t I2C_EN = (comm->type == I2C_INTERFACE) ? 0 : 4; // 0: enable, 4: disable
 
   // reg 10-19
   uint8_t blk1[10] = {
@@ -166,67 +164,32 @@ static lsm6dsox_io_t *lsm6dsox_init(interface_t type, uint8_t port, uint8_t addr
       TS_DIS,                         // ctrl 10 c (default) TIMESTAMP_DISABLED
   };
 
-  err = comm->write(comm->config, 0x07, blk0, 8);
-  if (err < 0) {
-    hw->errnum = LSM6DSOX_ERROR_INIT_BLK0;
-    return hw;
-  }
+  if (comm->write(comm->config, 0x07, blk0, sizeof(blk0)) < 0) return -1;
+  if (comm->write(comm->config, REG_CTRL1_XL, blk1, sizeof(blk1)) < 0) return -1;
 
-  err = comm->write(comm->config, REG_CTRL1_XL, blk1, 10);
-  if (err < 0) {
-    hw->errnum = LSM6DSOX_ERROR_INIT_BLK1;
-    return hw;
-  }
+  // printf("> lsm6dsox_init end:  hw: %d  comm: %d\n", hw, hw->comm);
+  lsm6dsox_dump(hw);
 
-  hw->ok     = true;
-  hw->errnum = LSM6DSOX_ERROR_NONE;
-  return hw;
-}
-
-lsm6dsox_io_t *lsm6dsox_i2c_init(uint8_t port, uint8_t addr, lsm6dsox_xl_range_t accel_range, lsm6dsox_g_range_t gyro_range, lsm6dsox_odr_t odr) {
-  return lsm6dsox_init(I2C_INTERFACE, port, addr, accel_range, gyro_range, odr);
-}
-
-lsm6dsox_io_t *lsm6dsox_spi_init(uint8_t port, pin_t cs, lsm6dsox_xl_range_t accel_range, lsm6dsox_g_range_t gyro_range, lsm6dsox_odr_t odr) {
-  return lsm6dsox_init(SPI_INTERFACE, port, cs, accel_range, gyro_range, odr);
-}
-
-lsm6dsox_io_t *lsm6dsox_spi_int_init(uint8_t port, pin_t cs, pin_t interrupt, void (*func)(void), lsm6dsox_odr_t odr) {
-  // setup interrupt
-  gpio_set_irq_enabled(interrupt, GPIO_IRQ_EDGE_RISE, true);
-  gpio_add_raw_irq_handler(interrupt, func);
-  irq_set_enabled(IO_IRQ_BANK0, true);
-  return lsm6dsox_init(SPI_INTERFACE, port, cs, LSM6DSOX_XL_8_G, LSM6DSOX_G_2000_DPS, odr);
-}
-
-// MSB 10000101 LSB = 128 + 4 + 1 = 133
-bool lsm6dsox_reboot(lsm6dsox_io_t *hw) {
-  comm_interface_t *comm = hw->comm;
-  uint8_t cmd            = 133;
-  // return writeRegister(REG_CTRL3_C, 133);
-  int32_t ok = comm->write(comm->config, REG_CTRL3_C, &cmd, 1);
-  if (ok < 0) return false;
-  return true;
+  return 0;
 }
 
 void lsm6dsox_dump(lsm6dsox_io_t *hw) {
-  int32_t err;
+  // if (hw == NULL) return GCIS_ERROR_IO_NULL;
   uint8_t buff[10];
   comm_interface_t *comm = hw->comm;
 
-  err = comm->read(comm->config, 0x07, buff, 8);
-  if (err < 0) {
+  if (comm->read(comm->config, 0x07, buff, 8) < 0) {
     printf("*** Error reading FIFO_CTRL_REG ***\n");
     return;
   }
+
   for (int i = 0; i < 8; ++i) {
     printf("> reg[0x%02x]: 0x%02x\n", 7 + i, buff[i]);
   }
 
   printf("---------------------------\n");
 
-  err = comm->read(comm->config, 0x10, buff, 10);
-  if (err < 0) {
+  if (comm->read(comm->config, 0x10, buff, 10) < 0) {
     printf("*** Error reading CTRL1_XL_REG ***\n");
     return;
   }
@@ -235,140 +198,184 @@ void lsm6dsox_dump(lsm6dsox_io_t *hw) {
   }
 }
 
-// static inline float cov(uint8_t lo, uint8_t hi) {
-//   return (float)((int16_t)((uint16_t)hi << 8) | lo);
-// }
-
 // accel - g's, gyro - dps, temp - C
-lsm6dsox_t lsm6dsox_read(lsm6dsox_io_t *hw) {
-  int32_t err;
-  lsm6dsox_t ret;
+int lsm6dsox_read(lsm6dsox_io_t *hw, imuf_t *imu) {
+  if (hw == NULL || imu == NULL) return GCIS_ERROR_IO_NULL;
+  // printf("lsm6dsox_read hw: %d  comm: %d\n", hw, hw->comm);
+  
   uint8_t *buff          = hw->buff;
   float as               = hw->a_scale;
   float gs               = hw->g_scale;
+
   comm_interface_t *comm = hw->comm;
 
   memset(buff, 0, LSM6DSOX_BUFFER_SIZE);
+  memset(imu, 0, sizeof(imuf_t));
 
-  err = comm->read(comm->config, REG_OUT_TEMP_L, buff, LSM6DSOX_BUFFER_SIZE);
-  // err = comm->read(comm->config, 0x22, buff, LSM6DSOX_BUFFER_SIZE);
-  if (err < 0) {
-    hw->ok = false;
-    return ret;
-  }
+  if (comm->read(comm->config, REG_OUT_TEMP_L, buff, LSM6DSOX_BUFFER_SIZE) < 0) return -1;
 
   // for (int i = 0; i < LSM6DSOX_BUFFER_SIZE; ++i)
   //   printf("buff[%d]: %u\n", i, buff[i]);
 
-  ret.temperature = cov_bb2f(buff[0], buff[1]) * TEMP_SCALE + 25.0f;
+  imu->temperature = cov_bb2f(buff[0], buff[1]) * TEMP_SCALE + 25.0f;
 
-  ret.g.x = gs * cov_bb2f(buff[2], buff[3]);
-  ret.g.y = gs * cov_bb2f(buff[4], buff[5]);
-  ret.g.z = gs * cov_bb2f(buff[6], buff[7]);
+  imu->g.x = gs * cov_bb2f(buff[2], buff[3]);
+  imu->g.y = gs * cov_bb2f(buff[4], buff[5]);
+  imu->g.z = gs * cov_bb2f(buff[6], buff[7]);
 
-  ret.a.x = as * cov_bb2f(buff[8], buff[9]);
-  ret.a.y = as * cov_bb2f(buff[10], buff[11]);
-  ret.a.z = as * cov_bb2f(buff[12], buff[13]);
+  imu->a.x = as * cov_bb2f(buff[8], buff[9]);
+  imu->a.y = as * cov_bb2f(buff[10], buff[11]);
+  imu->a.z = as * cov_bb2f(buff[12], buff[13]);
 
-  // ret.temperature = (float)((int16_t)((uint16_t)buff[1] << 8) | buff[0]) * TEMP_SCALE + 25.0f;
-
-  // ret.g.x = gs * (float)((int16_t)((uint16_t)buff[3] << 8) | buff[2]);
-  // ret.g.y = gs * (float)((int16_t)((uint16_t)buff[5] << 8) | buff[4]);
-  // ret.g.z = gs * (float)((int16_t)((uint16_t)buff[7] << 8) | buff[6]);
-
-  // ret.a.x = as * (float)((int16_t)((int16_t)buff[9] << 8) | buff[8]);
-  // ret.a.y = as * (float)((int16_t)((int16_t)buff[11] << 8) | buff[10]);
-  // ret.a.z = as * (float)((int16_t)((int16_t)buff[13] << 8) | buff[12]);
-
-  // ret.g.x = gs * (float)(((int16_t)buff[1] << 8) | buff[0]);
-  // ret.g.y = gs * (float)(((int16_t)buff[3] << 8) | buff[2]);
-  // ret.g.z = gs * (float)(((int16_t)buff[5] << 8) | buff[4]);
-
-  // ret.a.x = as * (float)(((int16_t)buff[7] << 8) | buff[6]);
-  // ret.a.y = as * (float)(((int16_t)buff[9] << 8) | buff[8]);
-  // ret.a.z = as * (float)(((int16_t)buff[11] << 8) | buff[10]);
-
-  hw->ok = true;
-
-  return ret;
+  return 0;
 }
 
-lsm6dsox_t lsm6dsox_read_calibrated(lsm6dsox_io_t *hw) {
-  lsm6dsox_t data = lsm6dsox_read(hw);
-  if (hw->ok == false) return data;
-
+void lsm6dsox_calibrate(lsm6dsox_io_t *hw, imuf_t *data) {
+  // if (hw == NULL) return GCIS_ERROR_IO_NULL;
   float *acal = hw->acal;
   float *gcal = hw->gcal;
-  lsm6dsox_t ret;
+  // imuf_t ret;
 
-  vec3f_t m = data.a;
+  vec3f_t m = data->a;
   // accel = A * accel_meas - bias
-  ret.a.x = acal[0] * m.x + acal[1] * m.y + acal[2] * m.z - acal[3];
-  ret.a.y = acal[4] * m.x + acal[5] * m.y + acal[6] * m.z - acal[7];
-  ret.a.z = acal[8] * m.x + acal[9] * m.y + acal[10] * m.z - acal[11];
+  data->a.x = acal[0] * m.x + acal[1] * m.y + acal[2] * m.z - acal[3];
+  data->a.y = acal[4] * m.x + acal[5] * m.y + acal[6] * m.z - acal[7];
+  data->a.z = acal[8] * m.x + acal[9] * m.y + acal[10] * m.z - acal[11];
 
-  m = data.g;
+  m = data->g;
   // gyro = A * gyro_meas - bias
-  ret.g.x = gcal[0] * m.x + gcal[1] * m.y + gcal[2] * m.z - gcal[3];
-  ret.g.y = gcal[4] * m.x + gcal[5] * m.y + gcal[6] * m.z - gcal[7];
-  ret.g.z = gcal[8] * m.x + gcal[9] * m.y + gcal[10] * m.z - gcal[11];
-
-  hw->ok = true;
-
-  return ret;
+  data->g.x = gcal[0] * m.x + gcal[1] * m.y + gcal[2] * m.z - gcal[3];
+  data->g.y = gcal[4] * m.x + gcal[5] * m.y + gcal[6] * m.z - gcal[7];
+  data->g.z = gcal[8] * m.x + gcal[9] * m.y + gcal[10] * m.z - gcal[11];
 }
 
-lsm6dsox_t lsm6dsox_calibrate(lsm6dsox_io_t *hw, lsm6dsox_t data) {
-  float *acal = hw->acal;
-  float *gcal = hw->gcal;
-  lsm6dsox_t ret;
-  hw->ok = true;
-
-  vec3f_t m = data.a;
-  // accel = A * accel_meas - bias
-  ret.a.x = acal[0] * m.x + acal[1] * m.y + acal[2] * m.z - acal[3];
-  ret.a.y = acal[4] * m.x + acal[5] * m.y + acal[6] * m.z - acal[7];
-  ret.a.z = acal[8] * m.x + acal[9] * m.y + acal[10] * m.z - acal[11];
-
-  m = data.g;
-  // gyro = A * gyro_meas - bias
-  ret.g.x = gcal[0] * m.x + gcal[1] * m.y + gcal[2] * m.z - gcal[3];
-  ret.g.y = gcal[4] * m.x + gcal[5] * m.y + gcal[6] * m.z - gcal[7];
-  ret.g.z = gcal[8] * m.x + gcal[9] * m.y + gcal[10] * m.z - gcal[11];
-
-  return ret;
+int lsm6dsox_read_calibrated(lsm6dsox_io_t *hw, imuf_t *ret) {
+  if (hw == NULL) return GCIS_ERROR_IO_NULL;
+  if (lsm6dsox_read(hw, ret) < 0) return -1;
+  lsm6dsox_calibrate(hw, ret);
+  return 0;
 }
 
 void lsm6dsox_set_cal(lsm6dsox_io_t *hw, float a[12], float g[12]) {
+  // if (hw == NULL) return GCIS_ERROR_IO_NULL;
   const uint32_t size = 12 * sizeof(float);
   memcpy(hw->acal, a, size);
   memcpy(hw->gcal, g, size);
 }
 
-int32_t lsm6dsox_available(lsm6dsox_io_t *hw) {
-  // TDA: temperature
-  // GDA: gyro
-  // XLDA: accel
-  //                             4   2    1
-  // STATUS_REG: MSB 0 0 0 0 0 TDA GDA XLDA LSB
-  uint8_t val            = 0;
-  comm_interface_t *comm = hw->comm;
-  // readRegister(REG_STATUS, &val);
-  int32_t ok = comm->read(comm->config, REG_STATUS, &val, 1);
-  // printf("lsm6dsox_available() avail/ready: %d %d\n", ok, (int)val);
-  if (ok < 0) return ok;
-  return val;
-}
+// int lsm6dsox_i2c_init(lsm6dsox_io_t *hw, uint8_t port, uint8_t addr, lsm6dsox_xl_range_t accel_range, lsm6dsox_g_range_t gyro_range, lsm6dsox_odr_t odr) {
+//   if (hw == NULL) hw = lsm6dsox_create(I2C_INTERFACE, port, addr);
+//   if (hw == NULL) return -1;
+//   return lsm6dsox_init(hw, accel_range, gyro_range, odr);
+// }
 
-bool lsm6dsox_ready(lsm6dsox_io_t *hw) {
-  // int32_t val = lsm6dsox_available(hw);
-  return (lsm6dsox_available(hw) < 3) ? false : true;
-}
+// int lsm6dsox_spi_init(lsm6dsox_io_t *hw, uint8_t port, pin_t cs, lsm6dsox_xl_range_t accel_range, lsm6dsox_g_range_t gyro_range, lsm6dsox_odr_t odr) {
+//   if (hw == NULL) hw = lsm6dsox_create(SPI_INTERFACE, port, cs);
+//   if (hw == NULL) return -1;
+//   printf("> lsm6dsox_spi_init:  hw: %d  comm: %d\n", hw, hw->comm);
+//   return lsm6dsox_init(hw, accel_range, gyro_range, odr);
+// }
 
-void lsm6dsox_free(lsm6dsox_io_t *hw) {
-  free(hw->comm);
-  free(hw);
-}
+// int lsm6dsox_spi_int_init(lsm6dsox_io_t *hw, uint8_t port, pin_t cs, pin_t interrupt, void (*func)(void), lsm6dsox_odr_t odr) {
+//   if (hw == NULL) hw = lsm6dsox_create(SPI_INTERFACE, port, cs);
+//   // setup interrupt
+//   gpio_set_irq_enabled(interrupt, GPIO_IRQ_EDGE_RISE, true);
+//   gpio_add_raw_irq_handler(interrupt, func);
+//   irq_set_enabled(IO_IRQ_BANK0, true);
+//   return lsm6dsox_init(hw, LSM6DSOX_XL_8_G, LSM6DSOX_G_2000_DPS, odr);
+// }
+
+// MSB 10000101 LSB = 128 + 4 + 1 = 133
+// bool lsm6dsox_reboot(lsm6dsox_io_t *hw) {
+//   comm_interface_t *comm = hw->comm;
+//   uint8_t cmd            = 133;
+//   // return writeRegister(REG_CTRL3_C, 133);
+//   if (comm->write(comm->config, REG_CTRL3_C, &cmd, 1) < 0) return false;
+//   return true;
+// }
+
+// int32_t lsm6dsox_available(lsm6dsox_io_t *hw) {
+//   // TDA: temperature
+//   // GDA: gyro
+//   // XLDA: accel
+//   //                             4   2    1
+//   // STATUS_REG: MSB 0 0 0 0 0 TDA GDA XLDA LSB
+//   uint8_t val            = 0;
+//   comm_interface_t *comm = hw->comm;
+//   // readRegister(REG_STATUS, &val);
+//   if (comm->read(comm->config, REG_STATUS, &val, 1) < 0) return -1;
+//   return val;
+// }
+
+// bool lsm6dsox_ready(lsm6dsox_io_t *hw) {
+//   // int32_t val = lsm6dsox_available(hw);
+//   return (lsm6dsox_available(hw) < 3) ? false : true;
+// }
+
+// void lsm6dsox_free(lsm6dsox_io_t *hw) {
+//   free(hw->comm);
+//   free(hw);
+// }
+
+// static inline float cov(uint8_t lo, uint8_t hi) {
+//   return (float)((int16_t)((uint16_t)hi << 8) | lo);
+// }
+
+// // accel - g's, gyro - dps, temp - C
+// imuf_t lsm6dsox_read(lsm6dsox_io_t *hw) {
+//   int32_t err;
+//   imuf_t ret;
+//   uint8_t *buff          = hw->buff;
+//   float as               = hw->a_scale;
+//   float gs               = hw->g_scale;
+//   comm_interface_t *comm = hw->comm;
+
+//   memset(buff, 0, LSM6DSOX_BUFFER_SIZE);
+
+//   err = comm->read(comm->config, REG_OUT_TEMP_L, buff, LSM6DSOX_BUFFER_SIZE);
+//   // err = comm->read(comm->config, 0x22, buff, LSM6DSOX_BUFFER_SIZE);
+//   if (err < 0) {
+//      = false;
+//     return ret;
+//   }
+
+//   // for (int i = 0; i < LSM6DSOX_BUFFER_SIZE; ++i)
+//   //   printf("buff[%d]: %u\n", i, buff[i]);
+
+//   ret.temperature = cov_bb2f(buff[0], buff[1]) * TEMP_SCALE + 25.0f;
+
+//   ret.g.x = gs * cov_bb2f(buff[2], buff[3]);
+//   ret.g.y = gs * cov_bb2f(buff[4], buff[5]);
+//   ret.g.z = gs * cov_bb2f(buff[6], buff[7]);
+
+//   ret.a.x = as * cov_bb2f(buff[8], buff[9]);
+//   ret.a.y = as * cov_bb2f(buff[10], buff[11]);
+//   ret.a.z = as * cov_bb2f(buff[12], buff[13]);
+
+//   // ret.temperature = (float)((int16_t)((uint16_t)buff[1] << 8) | buff[0]) * TEMP_SCALE + 25.0f;
+
+//   // ret.g.x = gs * (float)((int16_t)((uint16_t)buff[3] << 8) | buff[2]);
+//   // ret.g.y = gs * (float)((int16_t)((uint16_t)buff[5] << 8) | buff[4]);
+//   // ret.g.z = gs * (float)((int16_t)((uint16_t)buff[7] << 8) | buff[6]);
+
+//   // ret.a.x = as * (float)((int16_t)((int16_t)buff[9] << 8) | buff[8]);
+//   // ret.a.y = as * (float)((int16_t)((int16_t)buff[11] << 8) | buff[10]);
+//   // ret.a.z = as * (float)((int16_t)((int16_t)buff[13] << 8) | buff[12]);
+
+//   // ret.g.x = gs * (float)(((int16_t)buff[1] << 8) | buff[0]);
+//   // ret.g.y = gs * (float)(((int16_t)buff[3] << 8) | buff[2]);
+//   // ret.g.z = gs * (float)(((int16_t)buff[5] << 8) | buff[4]);
+
+//   // ret.a.x = as * (float)(((int16_t)buff[7] << 8) | buff[6]);
+//   // ret.a.y = as * (float)(((int16_t)buff[9] << 8) | buff[8]);
+//   // ret.a.z = as * (float)(((int16_t)buff[11] << 8) | buff[10]);
+
+//    = true;
+
+//   return ret;
+// }
+
+
 
 // #define REG_FIFO_CTRL4 0x0A
 // #define REG_INT1_CTRL  0x0D // Set interrupts for INT1 pin
@@ -768,9 +775,9 @@ void lsm6dsox_free(lsm6dsox_io_t *hw) {
 // // }
 
 // // accel - g's, gyro - dps, temp - C
-// lsm6dsox_t lsm6dsox_read(lsm6dsox_i2c_t *hw) {
+// imuf_t lsm6dsox_read(lsm6dsox_i2c_t *hw) {
 //   int32_t ok;
-//   lsm6dsox_t ret;
+//   imuf_t ret;
 //   ret.ok = false;
 //   printf("start read\n");
 //   if (lsm6dsox_ready(hw) == false) return ret;
@@ -804,13 +811,13 @@ void lsm6dsox_free(lsm6dsox_io_t *hw) {
 // }
 
 // // accel - g's, gyro - dps, temp - C
-// lsm6dsox_t lsm6dsox_read_cal(lsm6dsox_i2c_t *hw) {
-//   const lsm6dsox_t m = lsm6dsox_read(hw);
+// imuf_t lsm6dsox_read_cal(lsm6dsox_i2c_t *hw) {
+//   const imuf_t m = lsm6dsox_read(hw);
 //   if (m.ok == false) return m;
 //   float *acal = hw->acal;
 //   float *gcal = hw->gcal;
 
-//   lsm6dsox_t ret;
+//   imuf_t ret;
 //   ret.ok = false;
 
 //   // accel = A * accel_meas - bias
@@ -876,13 +883,13 @@ void lsm6dsox_free(lsm6dsox_io_t *hw) {
 // }
 
 // accel - g's, gyro - dps, temp - C
-// lsm6dsox_t lsm6dsox_read_cal(lsm6dsox_io_t *hw) {
-//   const lsm6dsox_t m = lsm6dsox_read(hw);
+// imuf_t lsm6dsox_read_cal(lsm6dsox_io_t *hw) {
+//   const imuf_t m = lsm6dsox_read(hw);
 //   if (m.ok == false) return m;
 //   float *acal = hw->acal;
 //   float *gcal = hw->gcal;
 
-//   lsm6dsox_t ret;
+//   imuf_t ret;
 //   ret.ok = false;
 
 //   // accel = A * accel_meas - bias

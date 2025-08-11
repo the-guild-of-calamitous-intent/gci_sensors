@@ -24,6 +24,8 @@ Ultr Hi  | x16 | x2 | 27  |
 #pragma once
 
 #include "gci_sensors/io.h"
+#include "gci_sensors/typedefs.h"
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -75,34 +77,45 @@ typedef struct {
   float t_lin; // was int64_t??
 } bmp3_reg_calib_data;
 
-typedef struct {
-  float pressure;
-  float temperature;
-} bmp390_t;
+// typedef struct {
+//   uint16_t par_t1;
+//   uint16_t par_t2;
+//   int8_t par_t3;
+//   int16_t par_p1;
+//   int16_t par_p2;
+//   int8_t par_p3;
+//   int8_t par_p4;
+//   uint16_t par_p5;
+//   uint16_t par_p6;
+//   int8_t par_p7;
+//   int8_t par_p8;
+//   int16_t par_p9;
+//   int8_t par_p10;
+//   int8_t par_p11;
+//   int64_t t_lin;
+// } bmp3_reg_calib_data_t;
+
+// typedef struct {
+//   float pressure;
+//   float temperature;
+// } pt_t;
 
 typedef struct {
   comm_interface_t *comm;
   bmp3_reg_calib_data calib;
   uint8_t buffer[BMP390_DATA_LEN];
-  bool ok;
+  // bool ok;
 } bmp390_io_t;
 
-bmp390_io_t *bmp390_i2c_init(uint8_t port, uint8_t addr, bmp390_odr_t odr,
-                             bmp390_iir_t iir);
-bmp390_io_t *bmp390_spi_init(uint8_t port, pin_t cs, bmp390_odr_t odr,
-                             bmp390_iir_t iir);
-
-const bmp390_t bmp390_read(bmp390_io_t *hw);
+bmp390_io_t *bmp390_create(interface_t type, uint8_t port, uint8_t addr_cs);
+int bmp390_init(bmp390_io_t *hw, bmp390_odr_t odr, bmp390_iir_t iir);
+int bmp390_read(bmp390_io_t *hw, pt_t *pt);
 // bool bmp390_ready(bmp390_io_t *hw);
 
 #if defined __cplusplus
 }
 #endif
 
-// typedef struct {
-//   int32_t pressure, temperature;
-//   bool ok;
-// } bmp390_raw_t;
 
 // enum bmp_error : uint8_t {
 //   NO_ERROR,
@@ -114,27 +127,3 @@ const bmp390_t bmp390_read(bmp390_io_t *hw);
 //   ERROR_INT_PIN,
 //   ERROR_PWR_MODE
 // };
-
-// typedef struct {
-//   i2c_inst_t *i2c;
-//   uint8_t addr;
-//   bmp3_reg_calib_data calib;
-//   uint8_t buffer[BMP390_DATA_LEN];
-// } bmp390_i2c_t;
-
-// #define BMP390_IIR_DISABLE   = 0x00; // 000 0   1 step lag
-// #define BMP390_IIR_COEFF_OFF = 0x00; // 000 0   1 step lag
-// #define BMP390_IIR_COEFF_1   = 0x02; // 001 0  10 step lag
-// #define BMP390_IIR_COEFF_3   = 0x04; // 010 0  20 step lag
-// #define BMP390_IIR_COEFF_7   = 0x06; // 011 0  40 step lag
-// #define BMP390_IIR_COEFF_15  = 0x08; // 100 0
-// #define BMP390_IIR_COEFF_31  = 0x0A; // 101 0
-// #define BMP390_IIR_COEFF_63  = 0x0C; // 110 0
-// #define BMP390_IIR_COEFF_127 = 0x0E; // 111 0
-
-// // datasheet Table 45, p 38 oversample hz
-// #define BMP390_ODR_200_HZ   = 0x00;
-// #define BMP390_ODR_100_HZ   = 0x01;
-// #define BMP390_ODR_50_HZ    = 0x02;
-// #define BMP390_ODR_25_HZ    = 0x03;
-// #define BMP390_ODR_12_5_HZ  = 0x04;

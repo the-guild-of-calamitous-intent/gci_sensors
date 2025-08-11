@@ -31,11 +31,12 @@ int main() {
 
   lsm6dsox_io_t *imu = NULL;
   while (true) {
-    imu = lsm6dsox_i2c_init(
-        I2C_PORT, LSM6DSOX_ADDRESS,
-        LSM6DSOX_XL_4_G, LSM6DSOX_G_2000_DPS,
-        LSM6DSOX_ODR_1660_HZ);
-    if (imu != NULL && imu->ok) break;
+    int ret = lsm6dsox_i2c_init(
+      imu,
+      I2C_PORT, LSM6DSOX_ADDRESS,
+      LSM6DSOX_XL_4_G, LSM6DSOX_G_2000_DPS,
+      LSM6DSOX_ODR_1660_HZ);
+    if (ret == 0) break;
     printf("imu error\n");
     sleep_ms(1000);
   }
@@ -47,8 +48,8 @@ int main() {
 
   while (true) {
     uint64_t now = time_us_64();
-    lsm6dsox_t i = lsm6dsox_read(imu);
-    if (imu->ok == false) {
+    imuf_t i;
+    if (lsm6dsox_read(imu, &i) < 0) {
       printf("*** Bad read ***\n");
       sleep_ms(1000);
       continue;

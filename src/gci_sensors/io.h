@@ -38,6 +38,20 @@ typedef uint32_t pin_t;
 #define GCIS_I2C_1700KHZ (1700 * 1000UL)
 #define GCIS_I2C_3400KHZ (3400 * 1000UL)
 
+typedef enum {
+  GCIS_ERROR_NONE = 0,
+  GCIS_ERROR_RW = -1,
+  GCIS_ERROR_WHOAMI = -2,
+  GCIS_ERROR_IO_NULL = -4,
+  GCIS_ERROR_INIT_VALUE = -8,
+  // GCIS_ERROR_NONE = 0,
+  // GCIS_ERROR_NONE = 0,
+} gcis_error_t;
+
+// --- Interrupts -----------------------------------------
+
+void gcis_interrupt(pin_t pin, void (*f)(uint,uint32_t), uint32_t mask);
+
 // --- Communication Interface ----------------------------
 
 typedef enum { I2C_INTERFACE, SPI_INTERFACE } interface_t;
@@ -47,10 +61,12 @@ typedef struct {
   int (*write)(void *config, uint8_t reg, const uint8_t *data, size_t len);
   int (*read)(void *config, uint8_t reg, uint8_t *data, size_t len);
   void *config; // protocol specific interface
+  interface_t type;
 } comm_interface_t;
 
 comm_interface_t *comm_interface_init(uint8_t port, uint8_t addr_cs,
                                       interface_t type);
+void comm_interface_free(comm_interface_t *comm);
 
 // --- I2C Implementation ---------------------------------
 typedef struct {
@@ -88,13 +104,16 @@ int32_t gcis_spi_bus_init(uint8_t port, uint32_t baud, pin_t sdi, pin_t sdo,
 int32_t gcis_spi0_init(uint32_t baud, pin_t sdi, pin_t sdo, pin_t sck);
 int32_t gcis_spi1_init(uint32_t baud, pin_t sdi, pin_t sdo, pin_t sck);
 
-void gcis_spi_free(uint8_t port);
+// void gcis_spi_free(uint8_t port);
 
 // return:
 //     >0: number bytes read/written
 //     <0: error
 int spi_write(void *config, uint8_t reg, const uint8_t *data, size_t len);
 int spi_read(void *config, uint8_t reg, uint8_t *data, size_t len);
+int spi_write_status(void *config, uint8_t reg, const uint8_t *data,
+                     size_t len);
+int spi_read_status(void *config, uint8_t reg, uint8_t *data, size_t len);
 
 // --- Useful Functions -------------------
 inline float cov_bb2f(uint8_t lsb, uint8_t msb) {

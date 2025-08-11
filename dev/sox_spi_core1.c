@@ -1,6 +1,7 @@
 #include "gci_sensors/lsm6dsox.h"
 #include <hardware/gpio.h>
 #include <pico/binary_info.h>
+#include <pico/multicore.h> // multicore_launch_core1()
 #include <pico/stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -15,14 +16,12 @@
 // constexpr float M_PIf = 3.14159265358979323846f;
 
 lsm6dsox_io_t *imu = NULL;
-// uint64_t prev      = 0;
-// uint64_t cnt       = 0;
-volatile bool imu_ready = true;
+bool imu_ready     = true;
 
-// void callback(uint pin, uint32_t event) {
-//   imu_ready = true;
-//   // printf("> pin: %u   event: %u\n", pin, event);
-// }
+void callback(uint pin, uint32_t event) {
+  imu_ready = true;
+  // printf("> pin: %u   event: %u\n", pin, event);
+}
 
 static void my_irq_handler(void) {
   volatile uint32_t event = gpio_get_irq_event_mask(INT);
@@ -54,7 +53,7 @@ bool is_gpio_interrupt_enabled(const uint gpio, const uint32_t event) {
   return (reg & (1u << bit_offset)) != 0;
 }
 
-void init_imu() {
+void read_imu() {
   // gpio_set_irq_enabled_with_callback(INT, GPIO_IRQ_EDGE_RISE, true, callback);
 
   gpio_set_irq_enabled(INT, GPIO_IRQ_EDGE_RISE, true);
@@ -67,24 +66,21 @@ void init_imu() {
   // gpio_pull_up(INT);          // Enable internal pull-up resistor
   // gpio_set_irq_enabled_with_callback(pin, GPIO_IRQ_EDGE_FALL, true, callback);
   // gcis_spi_init_cs(CS, SPI_CS_PULLDOWN);
-  bi_decl(bi_1pin_with_name(CS, "SPI CS"));
   bi_decl(bi_1pin_with_name(INT, "IMU INT1"));
 
   // uint32_t cnt       = 0;
   while (true) {
-    // Grok says normal maneuvers (0.5-2G) and agressive maneuvers (3-6G)
-    // and extreme flying (8-10G)
     imu = lsm6dsox_spi_init(
         0, CS,
-        LSM6DSOX_XL_8_G, LSM6DSOX_G_2000_DPS,
-        LSM6DSOX_ODR_416_HZ);
+        LSM6DSOX_XL_16_G, LSM6DSOX_G_2000_DPS,
+        LSM6DSOX_ODR_104_HZ);
     // ODR_208_HZ);
     if (imu != NULL || imu->ok == true) break;
     printf("imu error\n");
     sleep_ms(2000);
   }
 
-  printf("/// SPI ACCEL/GYRO START ///\n");
+  printf("/// ACCEL/GYRO START ///\n");
   printf(">> Init IMU:\n");
   printf(">> Core: %u\n", get_core_num());
   // printf(">> IRQ Enabled: %d\n", irq_is_enabled(INT));
@@ -105,24 +101,22 @@ void init_imu() {
   // printf(">> IRQ handler: %d\n", gpio_get_irq_enabled(INT, GPIO_IRQ_EDGE_RISE));
   // printf(">> IRQ Shared Handler: %d\n", irq_has_shared_handler(IO_IRQ_BANK0));
   printf(">> IRQ Priority: %u\n", irq_get_priority(INT));
-}
 
-void loop_read_imu() {
   uint64_t prev = 0;
   uint64_t cnt  = 0;
 
-  while (1) {
+  while (true) {
     if (imu_ready) {
       imu_ready = false;
 
       uint64_t now = time_us_64();
-      lsm6dsox_t i = lsm6dsox_read(imu);
+      imuf_t i = lsm6dsox_read(imu);
       if (imu->ok == false) {
         printf("****************\n");
         printf("*** Bad read ***\n");
         printf("****************\n");
         sleep_ms(1);
-        return;
+        break;
       }
 
       uint64_t delta = now - prev;
@@ -153,10 +147,13 @@ int main() {
 
   printf(">> spi instance: %u baudrate: %u\n", 0, speed);
   printf(">> spi SDI: %u SDO: %u SCK: %u CS: %u\n", TX, RX, SCK, CS);
+
   bi_decl(bi_3pins_with_func(RX, TX, SCK, GPIO_FUNC_SPI));
+  bi_decl(bi_1pin_with_name(CS, "SPI CS"));
 
-  init_imu();
-  loop_read_imu();
+  multicore_launch_core1(read_imu);
 
-  return 0;
+  while (1) {
+    tight_loop_contents();
+  }
 }

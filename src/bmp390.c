@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h> // calloc
 #include <string.h> // memcpy
 
@@ -18,6 +19,7 @@
 #define REG_TIME       0x0C
 #define REG_INT_STATUS 0x11
 #define REG_INT_CTRL   0x19
+#define REG_IF_CONF    0x1A
 #define REG_PWR_CTRL   0x1B
 #define REG_OSR        0x1C
 #define REG_ODR        0x1D
@@ -42,12 +44,12 @@
 #define TEMP_DRDY      0x40
 #define PRES_TEMP_DRDY (PRES_DRDY | TEMP_DRDY)
 // INT_CTRL_REG ---------------------
-#define INT_OD       0x00 // push-pull (want this!)
+#define INT_OD_PP    0x00 // push-pull (want this!)
 #define INT_LEVEL_HI 0x02 // INT active high
-#define INT_LATCH_EN 0x04
+#define INT_LATCH_EN 0x04 // latching on INT enabled - Fig 13, have to read STATUS to clear
 #define DRDY_EN      0x40 // enable INT pin
 // IF_CONF_REG -----------------------
-#define SPI4 0x00
+#define SPI4_EN 0x00
 // ERROR_REG -------------------------
 #define FATAL_ERR 0x01
 #define CMD_ERR   0x02
@@ -57,159 +59,159 @@
 static inline uint32_t to_24b(uint8_t *b) {
   return (uint32_t)b[0] | (uint32_t)b[1] << 8 | (uint32_t)b[2] << 16;
 }
+
 // FIXME: replace with cov_bb2f ... like lsb/msb better
-static inline uint16_t to_16b(uint8_t msb, uint8_t lsb) {
+static inline uint16_t to_u16b(uint8_t msb, uint8_t lsb) {
   return ((uint16_t)msb << 8) | (uint16_t)lsb;
 }
+
+static inline int16_t to_s16b(int8_t msb, int8_t lsb) {
+  return ((int16_t)msb << 8) | (int16_t)lsb;
+}
+
+// static bmp390_io_t *fail(bmp390_io_t *hw) {
+//   if (hw->comm != NULL) comm_interface_free(hw->comm);
+//   if (hw != NULL) free(hw);
+//   return NULL;
+// }
+
 static bool get_calib_data(bmp390_io_t *hw) {
   uint8_t tmp[LEN_CALIB_DATA];
+  int8_t *stmp           = (int8_t *)tmp;
   comm_interface_t *comm = hw->comm;
   // bool ok = readRegisters(REG_CALIB_DATA, LEN_CALIB_DATA, tmp);
   // if (!ok) return false;
   int32_t ok;
   // ok = gci_i2c_read(hw->i2c, hw->addr, REG_CALIB_DATA, tmp, LEN_CALIB_DATA);
-  ok = comm->read(comm->config, REG_CALIB_DATA, tmp, LEN_CALIB_DATA);
-  if (ok < 0) return false;
+  if (comm->read(comm->config, REG_CALIB_DATA, tmp, LEN_CALIB_DATA) < 0) return false;
 
-  hw->calib.par_t1 = (float)to_16b(tmp[1], tmp[0]) / powf(2, -8);
-  hw->calib.par_t2 = (float)to_16b(tmp[3], tmp[2]) / powf(2, 30);
-  hw->calib.par_t3 = (float)tmp[4] / powf(2, 48);
+  hw->calib.par_t1 = (float)to_u16b(tmp[1], tmp[0]) / powf(2, -8);
+  hw->calib.par_t2 = (float)to_u16b(tmp[3], tmp[2]) / powf(2, 30);
+  hw->calib.par_t3 = (float)stmp[4] / powf(2, 48);
 
-  hw->calib.par_p1  = ((float)to_16b(tmp[6], tmp[5]) - powf(2, 14)) / powf(2, 20);
-  hw->calib.par_p2  = ((float)to_16b(tmp[8], tmp[7]) - powf(2, 14)) / powf(2, 29);
-  hw->calib.par_p3  = (float)tmp[9] / powf(2, 32);
-  hw->calib.par_p4  = (float)tmp[10] / powf(2, 37);
-  hw->calib.par_p5  = (float)to_16b(tmp[12], tmp[11]) / powf(2, -3);
-  hw->calib.par_p6  = (float)to_16b(tmp[14], tmp[13]) / powf(2, 6);
-  hw->calib.par_p7  = (float)tmp[15] / powf(2, 8);
-  hw->calib.par_p8  = (float)tmp[16] / powf(2, 15);
-  hw->calib.par_p9  = (float)to_16b(tmp[18], tmp[17]) / powf(2, 48);
-  hw->calib.par_p10 = (float)tmp[19] / powf(2, 48);
-  hw->calib.par_p11 = (float)tmp[20] / powf(2, 65);
+  hw->calib.par_p1  = ((float)to_s16b(tmp[6], tmp[5]) - powf(2, 14)) / powf(2, 20);
+  hw->calib.par_p2  = ((float)to_s16b(tmp[8], tmp[7]) - powf(2, 14)) / powf(2, 29);
+  hw->calib.par_p3  = (float)stmp[9] / powf(2, 32);
+  hw->calib.par_p4  = (float)stmp[10] / powf(2, 37);
+  hw->calib.par_p5  = (float)to_u16b(tmp[12], tmp[11]) / powf(2, -3);
+  hw->calib.par_p6  = (float)to_u16b(tmp[14], tmp[13]) / powf(2, 6);
+  hw->calib.par_p7  = (float)stmp[15] / powf(2, 8);
+  hw->calib.par_p8  = (float)stmp[16] / powf(2, 15);
+  hw->calib.par_p9  = (float)to_s16b(tmp[18], tmp[17]) / powf(2, 48);
+  hw->calib.par_p10 = (float)stmp[19] / powf(2, 48);
+  hw->calib.par_p11 = (float)stmp[20] / powf(2, 65);
 
   return true;
 }
 
-static bool soft_reset(bmp390_io_t *hw) {
-  int32_t ok;
-  uint8_t arg;
-  comm_interface_t *comm = hw->comm;
+// datasheet pg 55-56
+static void compensate(bmp390_io_t *hw, uint32_t uncomp_temp, uint32_t uncomp_press, pt_t *pt) {
+  float pd1 = (float)uncomp_temp - hw->calib.par_t1;
+  float pd2 = pd1 * hw->calib.par_t2;
+  // hw->calib.t_lin = pd2 + (pd1 * pd1) * hw->calib.par_t3;
+  const float temp = pd2 + (pd1 * pd1) * hw->calib.par_t3;
 
-  // // Check for command ready status
-  // // uint8_t cmd_rdy_status = 0;
-  // // if(!readRegister(REG_STATUS, &cmd_rdy_status)) return false;
-  // // ok = gci_i2c_read(hw->i2c, hw->addr, REG_STATUS, &arg, 1);
-  // ok = comm->read(comm->config, REG_STATUS, &arg, 1);
-  // if (ok < 0) return false;
-
-  // // Device is ready to accept new command
-  // if (arg & CMD_RDY) {
-  // println("cmd_rdy_status is CMD_RDY");
-  // Write the soft reset command in the sensor
-  // datasheet, p 39, table 47, register ALWAYS reads 0x00
-  // writeRegister(REG_CMD, SOFT_RESET);
-  arg = SOFT_RESET;
-  // ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CMD, &arg, 1);
-  ok = comm->write(comm->config, REG_CMD, &arg, 1);
-  if (ok < 0) return false;
-
-  sleep_ms(10); // was 2 ... too quick?
-  return true;
-
-  // Read for command error status
-  //   arg = 0;
-  //   // if(!readRegister(REG_ERR, &reg_err)) return false;
-  //   // if (reg_err & REG_CMD) return false;
-  //   // ok = gci_i2c_read(hw->i2c, hw->addr, REG_ERR, &arg, 1);
-  //   ok = comm->read(comm->config, REG_ERR, &arg, 1);
-  //   if ((arg & REG_CMD) || (ok < 0)) return false;
-  //   return true;
-  // }
-  // return false;
-}
-
-// datasheet pg 55
-// RUN THIS FIRST!!!
-static float compensate_temperature(bmp390_io_t *hw, const uint32_t uncomp_temp) {
-  float pd1       = (float)uncomp_temp - hw->calib.par_t1;
-  float pd2       = pd1 * hw->calib.par_t2;
-  hw->calib.t_lin = pd2 + (pd1 * pd1) * hw->calib.par_t3;
-  return (float)hw->calib.t_lin;
-}
-
-// datasheet pg 56
-// Pressure requires Temperature be calculated FIRST!
-static float compensate_pressure(bmp390_io_t *hw, const uint32_t uncomp_press) {
-  float pd1, pd2, pd3, pd4, po1, po2, prs;
+  float pd3, pd4, po1, po2;
+  // const float temp = hw->calib.t_lin;
   const float up = (float)uncomp_press;
 
-  pd1 = hw->calib.par_p6 * hw->calib.t_lin;
-  pd2 = hw->calib.par_p7 * (hw->calib.t_lin * hw->calib.t_lin);
-  pd3 = hw->calib.par_p8 * (hw->calib.t_lin * hw->calib.t_lin * hw->calib.t_lin);
+  pd1 = hw->calib.par_p6 * temp;
+  pd2 = hw->calib.par_p7 * (temp * temp);
+  pd3 = hw->calib.par_p8 * (temp * temp * temp);
   po1 = hw->calib.par_p5 + pd1 + pd2 + pd3;
 
-  pd1 = hw->calib.par_p2 * hw->calib.t_lin;
-  pd2 = hw->calib.par_p3 * (hw->calib.t_lin * hw->calib.t_lin);
-  pd3 = hw->calib.par_p4 * (hw->calib.t_lin * hw->calib.t_lin * hw->calib.t_lin);
-  po2 = up * (hw->calib.par_p1 + pd1 + pd2 + pd3); // up
+  pd1 = hw->calib.par_p2 * temp;
+  pd2 = hw->calib.par_p3 * (temp * temp);
+  pd3 = hw->calib.par_p4 * (temp * temp * temp);
+  po2 = up * (hw->calib.par_p1 + pd1 + pd2 + pd3);
 
-  pd1 = up * up; // up
-  pd2 = hw->calib.par_p9 + hw->calib.par_p10 * hw->calib.t_lin;
-  pd3 = pd1 * pd2;
-  pd4 = pd3 + up * up * up * hw->calib.par_p11; // up
-  prs = po1 + po2 + pd4;
+  pd1               = up * up;
+  pd2               = hw->calib.par_p9 + hw->calib.par_p10 * temp;
+  pd3               = pd1 * pd2;
+  pd4               = pd3 + up * up * up * hw->calib.par_p11;
+  const float press = po1 + po2 + pd4;
 
-  return prs;
+  // pt_t ret = {.temperature = temp, .pressure = press};
+  pt->pressure = press;
+  pt->temperature = temp;
 }
 
-static bmp390_io_t *bmp390_init(interface_t type, uint8_t port, uint8_t addr, bmp390_odr_t odr, bmp390_iir_t iir) {
+bmp390_io_t *bmp390_create(interface_t type, uint8_t port, uint8_t addr_cs) {
   bmp390_io_t *hw = (bmp390_io_t *)calloc(1, sizeof(bmp390_io_t));
   if (hw == NULL) return NULL;
 
-  comm_interface_t *comm = comm_interface_init(port, addr, type);
-  if (comm == NULL) return NULL;
+  comm_interface_t *comm = comm_interface_init(port, addr_cs, type);
+  if (comm == NULL) {
+    free(hw);
+    return NULL;
+  }
+
+  if (type == SPI_INTERFACE) comm->read = spi_read_status;
 
   hw->comm = comm;
+  return hw;
+}
 
-  uint8_t id;
+int bmp390_init(bmp390_io_t *hw, bmp390_odr_t odr, bmp390_iir_t iir) {
+  if (hw == NULL) return -1;
+  comm_interface_t *comm = hw->comm;
+
+
+  // uint8_t id;
   int32_t ret;
   uint8_t arg;
-  uint8_t press_os, temp_os;
+  uint8_t osr_tp;
 
-  ret = comm->read(comm->config, REG_WHO_AM_I, &id, 1);
-  if (!(id == WHO_AM_I) || (ret < 0)) return NULL; // ERROR_WHOAMI;
+  // uint8_t dd[2];
 
-  if (soft_reset(hw) == false) return NULL;     // ERROR_RESET;
-  if (get_calib_data(hw) == false) return NULL; // ERROR_CAL_DATA;
-  // if (setODR(hw, odr) == false) return NULL;       // ERROR_ODR;
+  if (comm->read(comm->config, REG_WHO_AM_I, &arg, 1) < 0) return -1;
+  // ret = comm->read(comm->config, REG_WHO_AM_I, dd, 2);
+  // id = dd[1];
+  // printf(">> whoami: %u ret: %d\n", id, ret);
+  if (arg != WHO_AM_I) return -1;
+  // printf(">> found whoami\n");
+
+  arg = SOFT_RESET;
+  if (comm->write(comm->config, REG_CMD, &arg, 1) < 0) return -1;
+  sleep_ms(10);
+  // printf(">> reset\n");
+
+  if (get_calib_data(hw) == false) return -1; // ERROR_CAL_DATA;
+  // printf(">> got calib data\n");
 
   // based oon sec 3.9.1, pg 26
   // and pg 14, section 3.4.1
   // WARNING: Double check these work if you change them,
   //          only certain combos work
+  // OSR_REG[7:0]: < osr_t >< osr_p > shift temp left 3 bits
   switch (odr) {
-  case BMP390_ODR_200_HZ:              // 24 cm
-    press_os = BMP390_OVERSAMPLING_1X; // 2.64 Pa
-    temp_os  = BMP390_OVERSAMPLING_1X; // 0.0050 C
+  case BMP390_ODR_200_HZ: // 24 cm
+    // press = BMP390_OVERSAMPLING_1X; // 2.64 Pa
+    // temp  = BMP390_OVERSAMPLING_1X; // 0.0050 C
+    osr_tp = BMP390_OVERSAMPLING_1X | (BMP390_OVERSAMPLING_1X << 3);
     break;
-  case BMP390_ODR_100_HZ:              // 12 cm
-    press_os = BMP390_OVERSAMPLING_2X; // 1.32 Pa
-    temp_os  = BMP390_OVERSAMPLING_1X; // 0.0050 C
+  case BMP390_ODR_100_HZ: // 12 cm
+    // press = BMP390_OVERSAMPLING_2X; // 1.32 Pa
+    // temp  = BMP390_OVERSAMPLING_1X; // 0.0050 C
+    osr_tp = BMP390_OVERSAMPLING_2X | (BMP390_OVERSAMPLING_1X << 3);
     break;
-  case BMP390_ODR_50_HZ:               // 3cm
-    press_os = BMP390_OVERSAMPLING_8X; // 0.33 Pa
-    temp_os  = BMP390_OVERSAMPLING_1X; // 0.0050 C
+  case BMP390_ODR_50_HZ: // 3cm
+    // press = BMP390_OVERSAMPLING_8X; // 0.33 Pa
+    // temp  = BMP390_OVERSAMPLING_1X; // 0.0050 C
+    osr_tp = BMP390_OVERSAMPLING_8X | (BMP390_OVERSAMPLING_1X << 3);
     break;
   case BMP390_ODR_25_HZ:
-    press_os = BMP390_OVERSAMPLING_16X; // 0.17 Pa
-    temp_os  = BMP390_OVERSAMPLING_2X;  // 0.0025 C
+    // press = BMP390_OVERSAMPLING_16X; // 0.17 Pa
+    // temp  = BMP390_OVERSAMPLING_2X;  // 0.0025 C
+    osr_tp = BMP390_OVERSAMPLING_16X | (BMP390_OVERSAMPLING_2X << 3);
     break;
   case BMP390_ODR_12_5_HZ:
-    press_os = BMP390_OVERSAMPLING_32X;
-    temp_os  = BMP390_OVERSAMPLING_2X;
+    // press = BMP390_OVERSAMPLING_32X;
+    // temp  = BMP390_OVERSAMPLING_2X;
+    osr_tp = BMP390_OVERSAMPLING_32X | (BMP390_OVERSAMPLING_2X << 3);
     break;
   default:
-    return NULL;
+    return -1;
   }
 
   /*
@@ -229,53 +231,155 @@ static bmp390_io_t *bmp390_init(interface_t type, uint8_t port, uint8_t addr, bm
   UH Res      x16  0.17
   Highest Res x32 0.085
   */
-  ret = comm->write(comm->config, REG_CONFIG, &iir, 1);
-  if (ret < 0) return NULL; // ERROR_IIR_FILTER;
 
-  uint8_t if_type = (type == SPI_INTERFACE) ? SPI4 : 0x00;
   // ODR(0x1D) - INT_CTRL(0x19)
-  uint8_t cmds[5] = {
-      INT_OD | INT_LEVEL_HI | INT_LATCH_EN | DRDY_EN, // INT_CTRL (19h)
-      if_type,                                        // IF_CTRL (1Ah)
-      DRDY_EN | INT_LEVEL_HI | INT_LATCH_EN,          // PWR_CTRL (1Bh)
-      (temp_os << 3) | press_os,                      // OSR (1Ch)
-      odr,                                            // ODR (1Dh)
+  uint8_t cmds[9] = {
+      INT_OD_PP | INT_LEVEL_HI | DRDY_EN, // INT_CTRL (19h)
+      REG_IF_CONF & 0x7F,
+      SPI4_EN, // IF_CONF (1Ah)
+      REG_PWR_CTRL & 0x7F,
+      PRESS_EN | TEMP_EN | MODE_NORMAL, // PWR_CTRL (1Bh), enable P and T (0x03), normal mode (0x30)
+      REG_OSR & 0x7F,
+      osr_tp, // OSR (1Ch) temp/press over sample
+      REG_ODR & 0x7F,
+      odr // ODR (1Dh)
   };
-  ret = comm->write(comm->config, REG_ODR, cmds, 5);
-  if (ret < 0) return NULL;
+  if (comm->write(comm->config, REG_INT_CTRL, cmds, sizeof(cmds)) < 0) return -1;
+  if (comm->write(comm->config, REG_CONFIG, &iir, 1) < 0) return -1;
 
-  return hw;
+  return 0;
 }
 
-bmp390_io_t *bmp390_i2c_init(uint8_t port, uint8_t addr, bmp390_odr_t odr, bmp390_iir_t iir) {
-  return bmp390_init(I2C_INTERFACE, port, addr, odr, iir);
-}
+// bmp390_io_t *bmp390_i2c_init(uint8_t port, uint8_t addr, bmp390_odr_t odr, bmp390_iir_t iir) {
+//   return bmp390_init(I2C_INTERFACE, port, addr, odr, iir);
+// }
 
-bmp390_io_t *bmp390_spi_init(uint8_t port, pin_t cs, bmp390_odr_t odr, bmp390_iir_t iir) {
-  return bmp390_init(SPI_INTERFACE, port, cs, odr, iir);
-}
+// bmp390_io_t *bmp390_spi_init(uint8_t port, pin_t cs, bmp390_odr_t odr, bmp390_iir_t iir) {
+//   return bmp390_init(SPI_INTERFACE, port, cs, odr, iir);
+// }
 
-const bmp390_t bmp390_read(bmp390_io_t *hw) {
+
+
+int bmp390_read(bmp390_io_t *hw, pt_t *ret) {
   comm_interface_t *comm = hw->comm;
-  bmp390_t ret           = {0.0f, 0.0f};
-  hw->ok                 = false;
+  // hw->ok                 = false;
 
-  int32_t ok;
-  ok = comm->read(comm->config, REG_DATA, hw->buffer, BMP390_DATA_LEN);
-  if (ok < 0) return ret;
+  // int32_t ok;
+  if (comm->read(comm->config, REG_DATA, hw->buffer, BMP390_DATA_LEN) < 0) return -1;
   // printf("good read\n");
+
+  // printf(">> buf press: %u %u %u\n", hw->buffer[0], hw->buffer[1], hw->buffer[2]);
+  // printf(">> buf temp: %u %u %u\n", hw->buffer[3], hw->buffer[4], hw->buffer[5]);
 
   uint32_t press = to_24b(hw->buffer);
   uint32_t temp  = to_24b(&hw->buffer[3]);
+  // printf(">> read press: %u temp: %u\n", press, temp);
 
-  ret.temperature = compensate_temperature(hw, temp); // do temp 1st!!!
-  ret.pressure    = compensate_pressure(hw, press);
+  // ret.temperature = compensate_temperature(hw, temp); // do temp 1st!!!
+  // ret.pressure    = compensate_pressure(hw, press);
+  compensate(hw, temp, press, ret);
 
-  hw->ok = true;
-  return ret;
+  // hw->ok = true;
+  return 0;
 }
 
-// inline const bmp390_t read() { return read_raw(); }
+// const pt_t bmp390_read(bmp390_io_t *hw) {
+//   comm_interface_t *comm = hw->comm;
+//   pt_t ret           = {0.0f, 0.0f};
+//   hw->ok                 = false;
+
+//   int32_t ok;
+//   ok = comm->read(comm->config, REG_DATA, hw->buffer, BMP390_DATA_LEN);
+//   if (ok < 0) return ret;
+//   // printf("good read\n");
+
+//   // printf(">> buf press: %u %u %u\n", hw->buffer[0], hw->buffer[1], hw->buffer[2]);
+//   // printf(">> buf temp: %u %u %u\n", hw->buffer[3], hw->buffer[4], hw->buffer[5]);
+
+//   uint32_t press = to_24b(hw->buffer);
+//   uint32_t temp  = to_24b(&hw->buffer[3]);
+//   // printf(">> read press: %u temp: %u\n", press, temp);
+
+//   // ret.temperature = compensate_temperature(hw, temp); // do temp 1st!!!
+//   // ret.pressure    = compensate_pressure(hw, press);
+//   compensate(hw, temp, press, &ret);
+
+//   hw->ok = true;
+//   return ret;
+// }
+
+// static bool soft_reset(bmp390_io_t *hw) {
+//   int32_t ok;
+//   uint8_t arg;
+//   comm_interface_t *comm = hw->comm;
+
+//   // // Check for command ready status
+//   // // uint8_t cmd_rdy_status = 0;
+//   // // if(!readRegister(REG_STATUS, &cmd_rdy_status)) return false;
+//   // // ok = gci_i2c_read(hw->i2c, hw->addr, REG_STATUS, &arg, 1);
+//   // ok = comm->read(comm->config, REG_STATUS, &arg, 1);
+//   // if (ok < 0) return false;
+
+//   // // Device is ready to accept new command
+//   // if (arg & CMD_RDY) {
+//   // println("cmd_rdy_status is CMD_RDY");
+//   // Write the soft reset command in the sensor
+//   // datasheet, p 39, table 47, register ALWAYS reads 0x00
+//   // writeRegister(REG_CMD, SOFT_RESET);
+//   arg = SOFT_RESET;
+//   // ok  = gci_i2c_write(hw->i2c, hw->addr, REG_CMD, &arg, 1);
+//   ok = comm->write(comm->config, REG_CMD, &arg, 1);
+//   if (ok < 0) return false;
+
+//   sleep_ms(10); // was 2 ... too quick?
+//   return true;
+
+//   // Read for command error status
+//   //   arg = 0;
+//   //   // if(!readRegister(REG_ERR, &reg_err)) return false;
+//   //   // if (reg_err & REG_CMD) return false;
+//   //   // ok = gci_i2c_read(hw->i2c, hw->addr, REG_ERR, &arg, 1);
+//   //   ok = comm->read(comm->config, REG_ERR, &arg, 1);
+//   //   if ((arg & REG_CMD) || (ok < 0)) return false;
+//   //   return true;
+//   // }
+//   // return false;
+// }
+
+// // RUN THIS FIRST!!!
+// static float compensate_temperature(bmp390_io_t *hw, const uint32_t uncomp_temp) {
+//   float pd1       = (float)uncomp_temp - hw->calib.par_t1;
+//   float pd2       = pd1 * hw->calib.par_t2;
+//   hw->calib.t_lin = pd2 + (pd1 * pd1) * hw->calib.par_t3;
+//   return (float)hw->calib.t_lin;
+// }
+
+// // datasheet pg 56
+// // Pressure requires Temperature be calculated FIRST!
+// static float compensate_pressure(bmp390_io_t *hw, const uint32_t uncomp_press) {
+//   float pd1, pd2, pd3, pd4, po1, po2, prs;
+//   const float up = (float)uncomp_press;
+
+//   pd1 = hw->calib.par_p6 * hw->calib.t_lin;
+//   pd2 = hw->calib.par_p7 * (hw->calib.t_lin * hw->calib.t_lin);
+//   pd3 = hw->calib.par_p8 * (hw->calib.t_lin * hw->calib.t_lin * hw->calib.t_lin);
+//   po1 = hw->calib.par_p5 + pd1 + pd2 + pd3;
+
+//   pd1 = hw->calib.par_p2 * hw->calib.t_lin;
+//   pd2 = hw->calib.par_p3 * (hw->calib.t_lin * hw->calib.t_lin);
+//   pd3 = hw->calib.par_p4 * (hw->calib.t_lin * hw->calib.t_lin * hw->calib.t_lin);
+//   po2 = up * (hw->calib.par_p1 + pd1 + pd2 + pd3); // up
+
+//   pd1 = up * up; // up
+//   pd2 = hw->calib.par_p9 + hw->calib.par_p10 * hw->calib.t_lin;
+//   pd3 = pd1 * pd2;
+//   pd4 = pd3 + up * up * up * hw->calib.par_p11; // up
+//   prs = po1 + po2 + pd4;
+
+//   return prs;
+// }
+
+// inline const pt_t read() { return read_raw(); }
 // int32_t bmp390_available(bmp390_io_t *hw) {
 //   comm_interface_t *comm = hw->comm;
 

@@ -17,7 +17,7 @@
 #define INT 14
 #define EXT 5 // not using
 
-bool bar_ready = false;
+volatile bool bar_ready = false;
 
 void handle_interrupt(uint pin, uint32_t events) {
   if (pin == INT) bar_ready = true;
@@ -92,7 +92,7 @@ int main() {
   while (1) {
     if (bar_ready) {
       bar_ready  = false;
-      lps22_t pt = lps22_read(press);
+      pt_t pt = lps22_read(press);
       float alt  = pressure_altitude(pt.pressure * 100.0);
       printf("Press: %10.3f Pa  Temp: %10.3f C  Alt: %10.3f\n",
              pt.pressure,

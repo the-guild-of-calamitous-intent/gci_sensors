@@ -8,8 +8,9 @@
 #include "gci_sensors/algorithms.h"
 #include "gci_sensors/bmp390.h"
 
-#define i2c_scl 1
-#define i2c_sda 0
+#define PORT 0
+#define SCL  17
+#define SDA  16
 
 int main() {
   stdio_init_all();
@@ -17,26 +18,26 @@ int main() {
     sleep_ms(100);
   }
 
-  int32_t speed = gcis_i2c_bus_init(0, GCIS_I2C_400KHZ, i2c_sda, i2c_scl);
+  int32_t speed = gcis_i2c_bus_init(PORT, GCIS_I2C_400KHZ, SDA, SCL);
 
-  printf(">> i2c instance: %u baud: %u\n", 0, speed);
-  printf(">> i2c SDA: %u SCL: %u\n", i2c_sda, i2c_scl);
-  bi_decl(bi_2pins_with_func(i2c_sda, i2c_scl, GPIO_FUNC_I2C)); // compile info
+  printf(">> i2c%u @ %u bps\n", PORT, speed);
+  printf(">> i2c SDA: %u SCL: %u\n", SDA, SCL);
+  bi_decl(bi_2pins_with_func(SDA, SCL, GPIO_FUNC_I2C)); // compile info
 
   bmp390_io_t *pt = NULL;
   while (true) {
-    pt = bmp390_i2c_init(0, BMP390_ADDRESS, BMP390_ODR_50_HZ, BMP390_IIR_COEFF_3);
+    pt = bmp390_i2c_init(PORT, BMP390_ADDRESS, BMP390_ODR_50_HZ, BMP390_IIR_COEFF_3);
     if (pt != NULL) break;
     printf("bmp390 error\n");
     sleep_ms(1000);
   }
 
-  printf("/// PRESSURE/TEMPERATURE START ///\n");
+  printf("/// I2C PRESSURE/TEMPERATURE START ///\n");
 
   while (true) {
-    sleep_ms(500);
+    sleep_ms(1000);
 
-    bmp390_t i = bmp390_read(pt);
+    pt_t i = bmp390_read(pt);
     if (pt->ok == false) {
       printf("*** Bad reading ***\n");
       continue;
