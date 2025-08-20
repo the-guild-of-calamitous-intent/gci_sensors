@@ -5,8 +5,8 @@
 #include <stdio.h>
 #include <tusb.h> // wait usb serial
 
-#define SCL 17
-#define SDA 16
+#define SCL  17
+#define SDA  16
 #define PORT 0
 #define SCK  2
 #define TX   3 // SDO
@@ -14,15 +14,11 @@
 #define CS   10
 
 volatile bool mag_ready = false;
-
+lis2mdl_io_t *mag = NULL;
 
 int main() {
   stdio_init_all();
-  while (!tud_cdc_connected()) {
-    sleep_ms(100);
-  }
-
-  lis2mdl_io_t *mag = NULL;
+  while (!tud_cdc_connected()) sleep_ms(100);
 
 #if 1
   uint32_t speed = gcis_spi0_init(GCIS_SPI_1MHZ, RX, TX, SCK);
@@ -41,12 +37,11 @@ int main() {
   mag = lis2mdl_create(I2C_INTERFACE, PORT, LIS2MDL_ADDRESS);
 #endif
 
-  uint32_t cnt = 0;
+  mag->odr = LIS2MDL_ODR_100;
 
-  while (true) {
-    if (lis2mdl_init(mag, LIS2MDL_ODR_100) == 0) break;
-    printf("*** mag init error %u ***\n", cnt++);
-    sleep_ms(2000);
+  while (lis2mdl_init(mag) < 0) {
+    printf("*** mag init error ***\n");
+    sleep_ms(1000);
   }
 
   while (true) {

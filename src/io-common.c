@@ -41,7 +41,7 @@ void comm_interface_free(comm_interface_t *comm) {
 }
 
 // Interrupt assumes active HIGH and will trigger on RISING
-void gcis_interrupt(pin_t pin, void (*f)(uint,uint32_t), uint32_t mask) {
+void gcis_interrupt(pin_t pin, void (*f)(uint, uint32_t), uint32_t mask) {
   gpio_init(pin);
   gpio_set_dir(pin, GPIO_IN);
   gpio_pull_down(pin);

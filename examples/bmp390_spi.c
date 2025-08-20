@@ -36,11 +36,12 @@ int main() {
   bi_decl(bi_1pin_with_name(CS, "SPI CS"));
 
   bmp390_io_t *pt = bmp390_create(SPI_INTERFACE, PORT, CS);
-  while (true) {
-    int ret = bmp390_init(pt, BMP390_ODR_50_HZ, BMP390_IIR_COEFF_3);
-    if (ret == 0) break;
+  pt->odr = BMP390_ODR_50_HZ;
+  pt->iir = BMP390_IIR_COEFF_3;
+  
+  while (bmp390_init(pt) < 0) {
     printf("bmp390 error\n");
-    sleep_ms(2000);
+    sleep_ms(1000);
   }
 
   gpio_init(INT);

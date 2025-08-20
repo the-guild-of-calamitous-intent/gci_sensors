@@ -104,18 +104,18 @@ typedef struct {
   comm_interface_t *comm;
   bmp3_reg_calib_data calib;
   uint8_t buffer[BMP390_DATA_LEN];
-  // bool ok;
+  bmp390_odr_t odr;
+  bmp390_iir_t iir;
 } bmp390_io_t;
 
 bmp390_io_t *bmp390_create(interface_t type, uint8_t port, uint8_t addr_cs);
-int bmp390_init(bmp390_io_t *hw, bmp390_odr_t odr, bmp390_iir_t iir);
+int bmp390_init(bmp390_io_t *hw);
 int bmp390_read(bmp390_io_t *hw, pt_t *pt);
 // bool bmp390_ready(bmp390_io_t *hw);
 
 #if defined __cplusplus
 }
 #endif
-
 
 // enum bmp_error : uint8_t {
 //   NO_ERROR,

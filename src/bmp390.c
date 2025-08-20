@@ -132,7 +132,7 @@ static void compensate(bmp390_io_t *hw, uint32_t uncomp_temp, uint32_t uncomp_pr
   const float press = po1 + po2 + pd4;
 
   // pt_t ret = {.temperature = temp, .pressure = press};
-  pt->pressure = press;
+  pt->pressure    = press;
   pt->temperature = temp;
 }
 
@@ -149,13 +149,17 @@ bmp390_io_t *bmp390_create(interface_t type, uint8_t port, uint8_t addr_cs) {
   if (type == SPI_INTERFACE) comm->read = spi_read_status;
 
   hw->comm = comm;
+  hw->iir = BMP390_IIR_COEFF_1;
+  hw->odr = BMP390_ODR_50_HZ;
+
   return hw;
 }
 
-int bmp390_init(bmp390_io_t *hw, bmp390_odr_t odr, bmp390_iir_t iir) {
+int bmp390_init(bmp390_io_t *hw) {
   if (hw == NULL) return -1;
   comm_interface_t *comm = hw->comm;
-
+  bmp390_odr_t odr = hw->odr;
+  bmp390_iir_t iir = hw->iir;
 
   // uint8_t id;
   int32_t ret;
@@ -257,8 +261,6 @@ int bmp390_init(bmp390_io_t *hw, bmp390_odr_t odr, bmp390_iir_t iir) {
 // bmp390_io_t *bmp390_spi_init(uint8_t port, pin_t cs, bmp390_odr_t odr, bmp390_iir_t iir) {
 //   return bmp390_init(SPI_INTERFACE, port, cs, odr, iir);
 // }
-
-
 
 int bmp390_read(bmp390_io_t *hw, pt_t *ret) {
   comm_interface_t *comm = hw->comm;

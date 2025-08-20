@@ -64,6 +64,7 @@ LIST(APPEND pico_libs
 add_library(${PROJECT_NAME}
   src/algorithms.c
   src/bmp390.c
+  src/icm42688p.c
   src/io-common.c
   src/io-i2c.c
   src/io-spi.c

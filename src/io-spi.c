@@ -58,7 +58,6 @@ int32_t gcis_spi1_init(uint32_t baud, pin_t sdi, pin_t sdo, pin_t sck) {
 //   spi_deinit(spi);
 // }
 
-
 ///////////////////////////////////////////////////////////////////////
 
 int spi_write(void *config, uint8_t reg, const uint8_t *data, size_t len) {
@@ -98,7 +97,7 @@ int spi_write(void *config, uint8_t reg, const uint8_t *data, size_t len) {
 
 int spi_read(void *config, uint8_t reg, uint8_t *data, size_t len) {
   spi_config_t *cfg = (spi_config_t *)config;
-  reg |= 0x80;
+  reg |= 0x80; // set bit 7, read bit for SPI
 
   gpio_put(cfg->cs_pin, SPI_ACTIVATE); // CS low
   if (spi_write_blocking(cfg->spi, &reg, 1) < 0) return -1;
@@ -106,7 +105,7 @@ int spi_read(void *config, uint8_t reg, uint8_t *data, size_t len) {
   // printf(">> spi_read_blocking ret: %d\n", ret);
   gpio_put(cfg->cs_pin, SPI_DEACTIVATE); // CS high
   // memcpy(data, buff, len);
-  
+
   // printf(">> spi_read reg: 0x%02X\n", reg);
   // for (int i=0; i< len; ++i) printf(">> spi_read data: 0x%02X\n", data[i]);
   return 0;
@@ -116,13 +115,13 @@ int spi_read(void *config, uint8_t reg, uint8_t *data, size_t len) {
 
 int spi_read_status(void *config, uint8_t reg, uint8_t *data, size_t len) {
   spi_config_t *cfg = (spi_config_t *)config;
-  uint8_t tmp[2] = {reg | 0x80, 0x00};
+  uint8_t tmp[2]    = {reg | 0x80, 0x00};
 
   gpio_put(cfg->cs_pin, SPI_ACTIVATE); // CS low
   if (spi_write_read_blocking(cfg->spi, tmp, tmp, 2) < 0) return -1;
   if (spi_read_blocking(cfg->spi, 0x00, data, len) < 0) return -1;
   gpio_put(cfg->cs_pin, SPI_DEACTIVATE); // CS high
-  
+
   // for (int i=0; i< len; ++i) printf(">> spi_read data: 0x%02X\n", data[i]);
   return len;
 }
@@ -174,4 +173,3 @@ int spi_write_status(void *config, uint8_t reg, const uint8_t *data, size_t len)
 //   gpio_put(cfg->cs_pin, SPI_DEACTIVATE); // CS high
 //   return ret; //(ret < 0) ? ret : status;
 // }
-

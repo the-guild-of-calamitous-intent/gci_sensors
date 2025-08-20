@@ -7,8 +7,9 @@
 
 #include "gci_sensors/lis3mdl.h"
 
-#define i2c_scl 1
-#define i2c_sda 0
+#define PORT 0
+#define SCL  1
+#define SDA  0
 
 int main() {
   stdio_init_all();
@@ -16,19 +17,18 @@ int main() {
     sleep_ms(100);
   }
 
-  int32_t speed = gcis_i2c_bus_init(0, GCIS_I2C_400KHZ, i2c_sda, i2c_scl);
+  int32_t speed = gcis_i2c_bus_init(PORT, GCIS_I2C_400KHZ, SDA, SCL);
 
-  printf(">> i2c instance: %u baud: %u\n", 0, speed);
-  printf(">> i2c SDA: %u SCL: %u\n", i2c_sda, i2c_scl);
-  bi_decl(bi_2pins_with_func(i2c_sda, i2c_scl, GPIO_FUNC_I2C)); // compile info
+  printf(">> i2c instance: %u baud: %u\n", PORT, speed);
+  printf(">> i2c SDA: %u SCL: %u\n", SDA, SCL);
+  bi_decl(bi_2pins_with_func(SDA, SCL, GPIO_FUNC_I2C)); // compile info
 
   printf("/// MAGNETOMETER START ///\n");
 
-  lis3mdl_io_t *mag = NULL;
+  lis3mdl_io_t *mag = lis3mdl_create(I2C_INTERFACE, PORT, LIS3MDL_ADDRESS);
   while (true) {
-    mag = lis3mdl_i2c_init(0, LIS3MDL_ADDRESS, LIS3MDL_RANGE_4GAUSS, LIS3MDL_ODR_155HZ);
-    if (mag != NULL) break;
-    printf("mag error\n");
+    if (lis3mdl_init(mag, LIS3MDL_RANGE_4GAUSS, LIS3MDL_ODR_155HZ) == 0) break;
+    printf("*** mag error ***\n");
     sleep_ms(1000);
   }
 

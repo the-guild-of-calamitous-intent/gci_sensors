@@ -39,10 +39,10 @@ typedef uint32_t pin_t;
 #define GCIS_I2C_3400KHZ (3400 * 1000UL)
 
 typedef enum {
-  GCIS_ERROR_NONE = 0,
-  GCIS_ERROR_RW = -1,
-  GCIS_ERROR_WHOAMI = -2,
-  GCIS_ERROR_IO_NULL = -4,
+  GCIS_ERROR_NONE       = 0,
+  GCIS_ERROR_RW         = -1,
+  GCIS_ERROR_WHOAMI     = -2,
+  GCIS_ERROR_IO_NULL    = -4,
   GCIS_ERROR_INIT_VALUE = -8,
   // GCIS_ERROR_NONE = 0,
   // GCIS_ERROR_NONE = 0,
@@ -50,7 +50,7 @@ typedef enum {
 
 // --- Interrupts -----------------------------------------
 
-void gcis_interrupt(pin_t pin, void (*f)(uint,uint32_t), uint32_t mask);
+void gcis_interrupt(pin_t pin, void (*f)(uint, uint32_t), uint32_t mask);
 
 // --- Communication Interface ----------------------------
 

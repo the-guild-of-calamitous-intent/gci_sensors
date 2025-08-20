@@ -67,7 +67,7 @@ qmc5883_io_t *qmc5883_create(uint8_t port) {
     return NULL;
   }
 
-  hw->comm       = comm;
+  hw->comm = comm;
   return hw;
 }
 
@@ -75,7 +75,7 @@ int qmc5883_init(qmc5883_io_t *hw, qmc5883_range_t range) {
   if (hw == NULL) return GCIS_ERROR_IO_NULL;
   comm_interface_t *comm = hw->comm;
   uint8_t cmd;
-  
+
   hw->calibrated = false;
 
   switch (range) {
@@ -105,9 +105,9 @@ int qmc5883_init(qmc5883_io_t *hw, qmc5883_range_t range) {
   sleep_ms(10);
 
   int8_t cfg[] = {
-    0x1D, // 09h: 512_OSR | 200HZ | CONT | 8G
-    0x00, // 0Ah
-    0x01, // 0Bh: WTF? See pg 18 datasheet
+      0x1D, // 09h: 512_OSR | 200HZ | CONT | 8G
+      0x00, // 0Ah
+      0x01, // 0Bh: WTF? See pg 18 datasheet
   };
   if (comm->write(comm->config, 0x09, cfg, sizeof(cfg)) < 0) return -1;
 

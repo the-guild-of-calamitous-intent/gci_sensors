@@ -27,7 +27,7 @@
 #define LPF_EN 0x01 // LFP BW, off: ODR/2 on: ODR/4
 // CFG_REG_C -----------------
 #define SPI4_EN 0x04
-#define BDU_EN 0x10
+#define BDU_EN  0x10
 #define I2C_DIS 0x20
 
 // Default
@@ -43,9 +43,6 @@
 //   printf("*** fail ***\n");
 //   return -1;
 // }
-
-
-
 
 #define SPI_ACTIVATE   0
 #define SPI_DEACTIVATE 1
@@ -72,15 +69,15 @@
 //   printf(">> spi_read_blocking data ret: %d\n", ret);
 //   gpio_put(cfg->cs_pin, SPI_DEACTIVATE); // CS high
 //   // memcpy(data, buff, len);
-  
+
 //   // printf(">> spi_read reg: 0x%02X\n", reg);
 //   for (int i=0; i< len; ++i) printf(">> spi_read data: 0x%02X\n", data[i]);
 //   return ret;
 // }
 
-lis2mdl_io_t* lis2mdl_create(interface_t type, uint8_t port, uint8_t addr_cs) {
+lis2mdl_io_t *lis2mdl_create(interface_t type, uint8_t port, uint8_t addr_cs) {
   // printf(">> Create LIS2MDL start\n");
-  lis2mdl_io_t* hw = (lis2mdl_io_t *)calloc(1, sizeof(lis2mdl_io_t));
+  lis2mdl_io_t *hw = (lis2mdl_io_t *)calloc(1, sizeof(lis2mdl_io_t));
   if (hw == NULL) return NULL;
 
   comm_interface_t *comm = comm_interface_init(port, addr_cs, type);
@@ -89,25 +86,21 @@ lis2mdl_io_t* lis2mdl_create(interface_t type, uint8_t port, uint8_t addr_cs) {
     return NULL;
   }
 
-  // if (type == SPI_INTERFACE) {
-  //   comm->read = lis2mdl_spi_read;
-  //   // comm->write = spi_write_status;
-  // }
-
   hw->comm = comm;
-  // printf(">> Create LIS2MDL end hw: %d  comm: %d\n", hw, hw->comm);
+  hw->odr = LIS2MDL_ODR_50;
 
   return hw;
 }
 
-
-int lis2mdl_init(lis2mdl_io_t *hw, lis2mdl_odr_t odr) {
+int lis2mdl_init(lis2mdl_io_t *hw) {
   if (hw == NULL) return GCIS_ERROR_IO_NULL;
 
   const comm_interface_t *comm = hw->comm;
+  const lis2mdl_odr_t odr = hw->odr;
 
   float sm[12] = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
   memcpy(hw->sm, sm, 12 * sizeof(float));
+
 
   //
   // FUCK, FUCK, FUCK!!!!!!!!!!!!!!!!
@@ -115,7 +108,7 @@ int lis2mdl_init(lis2mdl_io_t *hw, lis2mdl_odr_t odr) {
   // you CANNOT READ WHOAMI until you SET IT FIRST!!!
   //
   const uint8_t spi_en = (comm->type == SPI_INTERFACE) ? SPI4_EN | I2C_DIS : 0x00;
-  uint8_t config[3] = {
+  uint8_t config[3]    = {
       CONT_MODE_EN | odr | COMP_TEMP_EN, // CFG_REG_A
       LPF_EN,                            // CFG_REG_B
       spi_en | BDU_EN,                   // CFG_REG_C
@@ -141,24 +134,29 @@ int lis2mdl_dump(lis2mdl_io_t *hw) {
   uint8_t config[3];
 
   if (comm->read(comm->config, LIS2MDL_CFG_REG_A, config, sizeof(config)) < 0) return -1;
-  for (int i=0; i < sizeof(config); ++i) printf(">> REG[0x%02X]: 0x%02X\n", 0x60 + i, config[i]);
+  for (int i = 0; i < sizeof(config); ++i)
+    printf(">> REG[0x%02X]: 0x%02X\n", 0x60 + i, config[i]);
   return 0;
 }
 
 int lis2mdl_read(lis2mdl_io_t *hw, vec3f_t *mag) {
   if (hw == NULL || mag == NULL) return GCIS_ERROR_IO_NULL;
   comm_interface_t *comm = hw->comm;
+  const float scale = 1.5; // pg 4, Table 2, mgauss/LSB
   uint8_t *buf = hw->buffer;
 
   if (comm->read(comm->config, LIS2MDL_OUTX_L_REG, buf, LIS2MDL_BUFFER_SIZE) < 0) return -1;
 
-  float scale = 1.5;
-  mag->x = scale * cov_bb2f(buf[0], buf[1]); // mGauss
-  mag->y = scale * cov_bb2f(buf[2], buf[3]);
-  mag->z = scale * cov_bb2f(buf[4], buf[5]);
+  mag->x      = scale * cov_bb2f(buf[0], buf[1]); // mGauss
+  mag->y      = scale * cov_bb2f(buf[2], buf[3]);
+  mag->z      = scale * cov_bb2f(buf[4], buf[5]);
 
   if (LIS2MDL_BUFFER_SIZE == 8) {
-    float temp = cov_bb2f(buf[6],buf[7]) / 8.0f + 25.0f;
+    // Temperature sensor data
+    // These registers contain temperature values from the internal temperature sensor. The output value is expressed
+    // as a signed 16-bit byte in two's complement. The four most significant bits contain a copy of the sign bit.
+    // The nominal sensitivity is 8 LSB/C.
+    float temp = cov_bb2f(buf[6], buf[7]) / 8.0f + 25.0f;
     // printf("temperature: %.1f C\n", temp);
     // correct for temperature
   }
@@ -167,22 +165,23 @@ int lis2mdl_read(lis2mdl_io_t *hw, vec3f_t *mag) {
 }
 
 // this is for the calibration below
+static
 inline int16_t to_int16(uint8_t lsb, uint8_t msb) {
   return (int16_t)((uint16_t)msb << 8) | lsb;
 }
 
 int lis2mdl_calibrate(lis2mdl_io_t *hw, uint16_t num_pts) {
   if (hw == NULL) return GCIS_ERROR_IO_NULL;
-	int i, j;
+  int i, j;
   comm_interface_t *comm;
-  comm = hw->comm;
-  uint8_t status = 0;
-  uint8_t *buf = hw->buffer;
-	int16_t magMin[3] = {0, 0, 0};
-	int16_t magMax[3] = {0, 0, 0};
-  int16_t bias[3] = {0, 0, 0};
-	
-	for (i=0; i<num_pts; i++) {
+  comm              = hw->comm;
+  uint8_t status    = 0;
+  uint8_t *buf      = hw->buffer;
+  int16_t magMin[3] = {0, 0, 0};
+  int16_t magMax[3] = {0, 0, 0};
+  int16_t bias[3]   = {0, 0, 0};
+
+  for (i = 0; i < num_pts; i++) {
     do {
       sleep_ms(1);
       comm->read(comm->config, LIS2MDL_STATUS_REG, &status, 1);
@@ -190,26 +189,26 @@ int lis2mdl_calibrate(lis2mdl_io_t *hw, uint16_t num_pts) {
 
     comm->read(comm->config, LIS2MDL_OUTX_L_REG, buf, LIS2MDL_BUFFER_SIZE);
 
-		int16_t magTemp[3] = {
-      to_int16(buf[0], buf[1]), // x
-      to_int16(buf[2], buf[3]), // y
-      to_int16(buf[4], buf[5])  // z
+    int16_t magTemp[3] = {
+        to_int16(buf[0], buf[1]), // x
+        to_int16(buf[2], buf[3]), // y
+        to_int16(buf[4], buf[5])  // z
     };
 
-		for (j = 0; j < 3; j++) {
-			if (magTemp[j] > magMax[j]) magMax[j] = magTemp[j];
-			if (magTemp[j] < magMin[j]) magMin[j] = magTemp[j];
-		}
-	}
-	
+    for (j = 0; j < 3; j++) {
+      if (magTemp[j] > magMax[j]) magMax[j] = magTemp[j];
+      if (magTemp[j] < magMin[j]) magMin[j] = magTemp[j];
+    }
+  }
+
   int16_t m;
   uint8_t config[6] = {0};
   for (j = 0; j < 3; j++) {
-		m = (magMax[j] + magMin[j]) / 2;
-    config[2*j] = (uint8_t)(m & 0xFF);
-    config[2*j+1] = (uint8_t)(m >> 8);
-	}
+    m                 = (magMax[j] + magMin[j]) / 2;
+    config[2 * j]     = (uint8_t)(m & 0xFF);
+    config[2 * j + 1] = (uint8_t)(m >> 8);
+  }
   comm->write(comm->config, LIS3MDL_OFFSET_REG, config, sizeof(config));
-  
+
   return 0;
 }

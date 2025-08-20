@@ -18,11 +18,6 @@
 #define REG_OUT_TEMP_L 0x20 // termperature
 
 ////////////////////////////////////////////////////////////////////////////////
-// static void lsm6dsox_free(lsm6dsox_io_t *hw) {
-//   if (hw == NULL) return;
-//   if (hw->comm != NULL) free(hw->comm);
-//   if (hw != NULL) free(hw);
-// }
 
 lsm6dsox_io_t *lsm6dsox_create(interface_t type, uint8_t port, uint8_t addr_cs) {
   lsm6dsox_io_t *hw = (lsm6dsox_io_t *)calloc(1, sizeof(lsm6dsox_io_t));
@@ -39,8 +34,8 @@ lsm6dsox_io_t *lsm6dsox_create(interface_t type, uint8_t port, uint8_t addr_cs) 
 
 int lsm6dsox_init(lsm6dsox_io_t *hw, lsm6dsox_xl_range_t accel_range, lsm6dsox_g_range_t gyro_range, lsm6dsox_odr_t odr) {
   if (hw == NULL) return GCIS_ERROR_IO_NULL;
-  int err      = 0;
-  uint8_t data = 0;
+  int err                = 0;
+  uint8_t data           = 0;
   comm_interface_t *comm = hw->comm;
 
   // printf("> check whoami\n");
@@ -51,7 +46,7 @@ int lsm6dsox_init(lsm6dsox_io_t *hw, lsm6dsox_xl_range_t accel_range, lsm6dsox_g
   // reset everything to default
   data = 0x01; // CTRL3_C SW_RESET ... sets it to default values
   if (comm->write(comm->config, 0x12, &data, 1) < 0) return -1;
-  sleep_ms(3);
+  sleep_ms(30);
   // printf("> reset done\n");
 
   if (accel_range == LSM6DSOX_XL_2_G) hw->a_scale = 2.0f / 32768.0f;
@@ -137,17 +132,17 @@ int lsm6dsox_init(lsm6dsox_io_t *hw, lsm6dsox_xl_range_t accel_range, lsm6dsox_g
   //                       |  |          |          |
   //                       +->|    1     | -> LPF2 -+
 
-  #define HP_EN_G    0x00                              // G disable HPF
-  #define LPF1_SEL_G 0x00                              // G turn off LPF1, only use LPF2
-  #define LPF2_XL_EN 0x00                              // turn off LPF2 for XL
-  #define IF_INC     0x04                              // 0x04: auto incr pointer on read reg
-  #define G_BW       0x03                              // 0x03: FTYPE, LPF1 highest BW - Don't care, disabled
-  #define BDU        0x40                              // 0x00: continuous, 0x40: not updated until read
-  #define PP_OD      0x00                              // 0x00: push-pull mode ... this is what I want
-  #define I3C_DIS    0x02                              // 0x02: disable I3C
-  #define DEN        0xD0                              // 0xD0: DEN ... don't use, but is default
-  #define TS_DIS     0x00                              // timestamp EN: 0x20, DIS: 0x00
-  
+#define HP_EN_G    0x00 // G disable HPF
+#define LPF1_SEL_G 0x00 // G turn off LPF1, only use LPF2
+#define LPF2_XL_EN 0x00 // turn off LPF2 for XL
+#define IF_INC     0x04 // 0x04: auto incr pointer on read reg
+#define G_BW       0x03 // 0x03: FTYPE, LPF1 highest BW - Don't care, disabled
+#define BDU        0x40 // 0x00: continuous, 0x40: not updated until read
+#define PP_OD      0x00 // 0x00: push-pull mode ... this is what I want
+#define I3C_DIS    0x02 // 0x02: disable I3C
+#define DEN        0xD0 // 0xD0: DEN ... don't use, but is default
+#define TS_DIS     0x00 // timestamp EN: 0x20, DIS: 0x00
+
   const uint8_t I2C_EN = (comm->type == I2C_INTERFACE) ? 0 : 4; // 0: enable, 4: disable
 
   // reg 10-19
@@ -168,7 +163,7 @@ int lsm6dsox_init(lsm6dsox_io_t *hw, lsm6dsox_xl_range_t accel_range, lsm6dsox_g
   if (comm->write(comm->config, REG_CTRL1_XL, blk1, sizeof(blk1)) < 0) return -1;
 
   // printf("> lsm6dsox_init end:  hw: %d  comm: %d\n", hw, hw->comm);
-  lsm6dsox_dump(hw);
+  // lsm6dsox_dump(hw);
 
   return 0;
 }
@@ -184,7 +179,7 @@ void lsm6dsox_dump(lsm6dsox_io_t *hw) {
   }
 
   for (int i = 0; i < 8; ++i) {
-    printf("> reg[0x%02x]: 0x%02x\n", 7 + i, buff[i]);
+    printf("> reg[%#x]: 0x%02x\n", 7 + i, buff[i]);
   }
 
   printf("---------------------------\n");
@@ -202,10 +197,10 @@ void lsm6dsox_dump(lsm6dsox_io_t *hw) {
 int lsm6dsox_read(lsm6dsox_io_t *hw, imuf_t *imu) {
   if (hw == NULL || imu == NULL) return GCIS_ERROR_IO_NULL;
   // printf("lsm6dsox_read hw: %d  comm: %d\n", hw, hw->comm);
-  
-  uint8_t *buff          = hw->buff;
-  float as               = hw->a_scale;
-  float gs               = hw->g_scale;
+
+  uint8_t *buff = hw->buff;
+  float as      = hw->a_scale;
+  float gs      = hw->g_scale;
 
   comm_interface_t *comm = hw->comm;
 
@@ -374,8 +369,6 @@ void lsm6dsox_set_cal(lsm6dsox_io_t *hw, float a[12], float g[12]) {
 
 //   return ret;
 // }
-
-
 
 // #define REG_FIFO_CTRL4 0x0A
 // #define REG_INT1_CTRL  0x0D // Set interrupts for INT1 pin

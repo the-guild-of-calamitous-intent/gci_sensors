@@ -62,7 +62,7 @@ lis3mdl_io_t *lis3mdl_create(interface_t type, uint8_t port, uint8_t addr_cs) {
 int lis3mdl_init(lis3mdl_io_t *hw, lis3mdl_range_t range, lis3mdl_odr_t odr) {
   if (hw == NULL) return GCIS_ERROR_IO_NULL;
   comm_interface_t *comm = hw->comm;
-  uint8_t id = 0;
+  uint8_t id             = 0;
   uint8_t cmd;
 
   float sm[12] = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
@@ -179,7 +179,7 @@ bool lis3mdl_reboot(lis3mdl_io_t *hw) {
 
 int lis3mdl_read(lis3mdl_io_t *hw, vec3f_t *ret) {
   comm_interface_t *comm = hw->comm;
-  uint8_t *buf = hw->buffer;
+  uint8_t *buf           = hw->buffer;
 
   // if (lis3mdl_ready(hw) == false) return ret;
 

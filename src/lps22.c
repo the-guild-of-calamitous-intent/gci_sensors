@@ -12,9 +12,8 @@ References:
 #include <stdio.h>  // printf
 #include <stdlib.h> // calloc
 
-#include "gci_sensors/lps22.h"
 #include "gci_sensors/io.h" // cov_bb2f
-
+#include "gci_sensors/lps22.h"
 
 // Registers and fields
 #define LPS22_WHO_AM_I 0xB1
@@ -59,7 +58,6 @@ References:
 #define LPS22_TEMP_OUT_H      0x2C
 #define LPS22_LPFP_RES        0x33
 
-
 lps22_io_t *lps22_create(uint8_t port, pin_t cs) {
   lps22_io_t *hw = (lps22_io_t *)calloc(1, sizeof(lps22_io_t));
   if (hw == NULL) return NULL;
@@ -79,7 +77,7 @@ int lps22_spi_init(lps22_io_t *hw, lps22_odr_t ODR) {
   comm_interface_t *comm = hw->comm;
 
   uint8_t reg;
-  if(comm->read(comm->config, LPS22_WHO_AM_I_REG, &reg, 1) < 0) return -1;
+  if (comm->read(comm->config, LPS22_WHO_AM_I_REG, &reg, 1) < 0) return -1;
   if (reg != LPS22_WHO_AM_I) return GCIS_ERROR_WHOAMI;
 
   // SWRESET - reset regs to default
@@ -100,14 +98,14 @@ int lps22_spi_init(lps22_io_t *hw, lps22_odr_t ODR) {
 int lps22_read(lps22_io_t *hw, pt_t *ret) {
   if (hw == NULL) return GCIS_ERROR_IO_NULL;
   comm_interface_t *comm = hw->comm;
-  uint8_t *buff   = hw->sensor_data;
+  uint8_t *buff          = hw->sensor_data;
 
   if (comm->read(comm->config, LPS22_PRESSURE_OUT_XL, buff, LPS22_DATA_LEN) < 0) {
     return -1;
   }
 
-  ret->pressure = cov_bbb2f(buff[0],buff[1],buff[2]) / 4096.0f; // hPa
-  ret->temperature = cov_bb2f(buff[3],buff[4]) / 100.0f;   // C
-  
+  ret->pressure    = cov_bbb2f(buff[0], buff[1], buff[2]) / 4096.0f; // hPa
+  ret->temperature = cov_bb2f(buff[3], buff[4]) / 100.0f;            // C
+
   return 0;
 }

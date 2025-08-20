@@ -21,7 +21,6 @@ typedef struct {
   uint8_t buffer[PA1010D_BUFFER_SIZE];
 } pa1010d_io_t;
 
-
 pa1010d_io_t *pa1010d_create(uint32_t port);
 int32_t pa1010d_write(pa1010d_io_t *hw, const uint8_t *command,
                       uint16_t cmd_size);

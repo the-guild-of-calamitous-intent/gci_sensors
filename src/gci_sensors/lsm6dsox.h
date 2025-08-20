@@ -55,7 +55,8 @@ typedef struct {
 } lsm6dsox_io_t;
 
 lsm6dsox_io_t *lsm6dsox_create(interface_t type, uint8_t port, uint8_t addr_cs);
-int lsm6dsox_init(lsm6dsox_io_t *hw, lsm6dsox_xl_range_t accel_range, lsm6dsox_g_range_t gyro_range, lsm6dsox_odr_t odr);
+int lsm6dsox_init(lsm6dsox_io_t *hw, lsm6dsox_xl_range_t accel_range,
+                  lsm6dsox_g_range_t gyro_range, lsm6dsox_odr_t odr);
 int lsm6dsox_read(lsm6dsox_io_t *hw, imuf_t *imu);
 int lsm6dsox_read_calibrated(lsm6dsox_io_t *hw, imuf_t *imu);
 // void lsm6dsox_calibrate(lsm6dsox_io_t *hw, imuf_t *imu);
