@@ -28,7 +28,7 @@ typedef enum {
 typedef struct {
   comm_interface_t *comm;
   uint8_t buffer[LIS2MDL_BUFFER_SIZE];
-  float sm[12];
+  float mcal[12];
   lis2mdl_odr_t odr;
 } lis2mdl_io_t;
 

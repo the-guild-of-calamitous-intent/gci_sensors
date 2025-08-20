@@ -29,6 +29,11 @@ lsm6dsox_io_t *lsm6dsox_create(interface_t type, uint8_t port, uint8_t addr_cs) 
     return NULL;
   }
   hw->comm = comm;
+
+  float sm[12] = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+  memcpy(hw->acal, sm, 12 * sizeof(float));
+  memcpy(hw->gcal, sm, 12 * sizeof(float));
+
   return hw;
 }
 
@@ -53,14 +58,14 @@ int lsm6dsox_init(lsm6dsox_io_t *hw, lsm6dsox_xl_range_t accel_range, lsm6dsox_g
   else if (accel_range == LSM6DSOX_XL_4_G) hw->a_scale = 4.0f / 32768.0f;
   else if (accel_range == LSM6DSOX_XL_8_G) hw->a_scale = 8.0f / 32768.0f;
   else if (accel_range == LSM6DSOX_XL_16_G) hw->a_scale = 16.0f / 32768.0f;
-  else return GCIS_ERROR_INIT_VALUE;
+  else return GCIS_ERROR_PARAM;
 
   if (gyro_range == LSM6DSOX_G_125_DPS) hw->g_scale = 125.0f / 32768.0f;
   else if (gyro_range == LSM6DSOX_G_250_DPS) hw->g_scale = 250.0f / 32768.0f;
   else if (gyro_range == LSM6DSOX_G_500_DPS) hw->g_scale = 500.0f / 32768.0f;
   else if (gyro_range == LSM6DSOX_G_1000_DPS) hw->g_scale = 1000.0f / 32768.0f;
   else if (gyro_range == LSM6DSOX_G_2000_DPS) hw->g_scale = 2000.0f / 32768.0f;
-  else return GCIS_ERROR_INIT_VALUE;
+  else return GCIS_ERROR_PARAM;
 
   // Assume Mode 1: sensor -> I2C/SPI -> uC
   //

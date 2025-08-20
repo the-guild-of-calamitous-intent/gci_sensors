@@ -7,13 +7,13 @@
 #define I2C_BUS_RELEASE false
 
 // FIXME: make global when picolib_c gone
-typedef enum {
-  I2C_INVALID_SCL_PIN = -1,
-  I2C_INVALID_SDA_PIN = -2,
-  I2C_INVALID_PORT    = -3,
-  I2C_PTR_NULL        = -4,
-  I2C_UNINITIALIZED   = -99
-} i2c_errors_t;
+// typedef enum {
+//   I2C_INVALID_SCL_PIN = -1,
+//   I2C_INVALID_SDA_PIN = -2,
+//   I2C_INVALID_PORT    = -3,
+//   I2C_PTR_NULL        = -4,
+//   I2C_UNINITIALIZED   = -99
+// } i2c_errors_t;
 
 int32_t gcis_i2c_bus_init(uint32_t port, uint32_t baud, pin_t pin_sda, pin_t pin_scl) {
   pin_t sda, scl;
@@ -29,11 +29,11 @@ int32_t gcis_i2c_bus_init(uint32_t port, uint32_t baud, pin_t pin_sda, pin_t pin
     scl = (1 << 3) | (1 << 7) | (1 << 11) | (1 << 15) | (1 << 19) | (1 << 23) | (1 << 27);
     i2c = i2c1;
   }
-  else return I2C_INVALID_PORT;
+  else return GCIS_ERROR_PORT;
 
   // check if valid pins
-  if (((1 << pin_sda) & sda) == 0) return I2C_INVALID_SDA_PIN;
-  if (((1 << pin_scl) & scl) == 0) return I2C_INVALID_SCL_PIN;
+  if (((1 << pin_sda) & sda) == 0) return GCIS_ERROR_SDATA_PIN;
+  if (((1 << pin_scl) & scl) == 0) return GCIS_ERROR_SDATA_PIN;
 
   int32_t speed = i2c_init(i2c, baud);
 

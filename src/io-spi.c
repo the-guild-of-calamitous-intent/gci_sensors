@@ -27,11 +27,11 @@ int32_t gcis_spi_bus_init(
     valid_sdo = (1 << 11) | (1 << 15) | (1 << 27);
     spi       = spi1;
   }
-  else return SPI_INVALID_PORT;
+  else return GCIS_ERROR_PORT;
 
-  if (((1 << sdi) & valid_sdi) == 0) return SPI_INVALID_SDI_PIN;
-  if (((1 << sdo) & valid_sdo) == 0) return SPI_INVALID_SDO_PIN;
-  if (((1 << sck) & valid_sck) == 0) return SPI_INVALID_SCK_PIN;
+  if (((1 << sdi) & valid_sdi) == 0) return GCIS_ERROR_SDATA_PIN;
+  if (((1 << sdo) & valid_sdo) == 0) return GCIS_ERROR_SDATA_PIN;
+  if (((1 << sck) & valid_sck) == 0) return GCIS_ERROR_SCK_PIN;
 
   baud = spi_init(spi, baud);
 

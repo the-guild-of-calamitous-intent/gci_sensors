@@ -39,24 +39,23 @@ typedef uint32_t pin_t;
 #define GCIS_I2C_3400KHZ (3400 * 1000UL)
 
 typedef enum {
-  GCIS_ERROR_NONE       = 0,
+  GCIS_ERROR_NONE       =  0,
   GCIS_ERROR_RW         = -1,
   GCIS_ERROR_WHOAMI     = -2,
   GCIS_ERROR_IO_NULL    = -4,
-  GCIS_ERROR_INIT_VALUE = -8,
-  // GCIS_ERROR_NONE = 0,
-  // GCIS_ERROR_NONE = 0,
+  GCIS_ERROR_PARAM      = -8,
+  GCIS_ERROR_SDATA_PIN  = -16,
+  GCIS_ERROR_SCK_PIN    = -32,
+  GCIS_ERROR_PORT       = -64,
 } gcis_error_t;
 
 // --- Interrupts -----------------------------------------
-
 void gcis_interrupt(pin_t pin, void (*f)(uint, uint32_t), uint32_t mask);
 
 // --- Communication Interface ----------------------------
-
 typedef enum { I2C_INTERFACE, SPI_INTERFACE } interface_t;
 
-// abstract interface
+// --- Abstract Interface ---------------------------------
 typedef struct {
   int (*write)(void *config, uint8_t reg, const uint8_t *data, size_t len);
   int (*read)(void *config, uint8_t reg, uint8_t *data, size_t len);
@@ -84,14 +83,14 @@ int32_t gcis_i2c_bus_init(uint32_t port, uint32_t baud, pin_t sda, pin_t scl);
 void gcis_i2c_free(uint8_t port);
 
 // --- SPI Implementation ---------------------------------
-typedef enum {
-  SPI_INVALID_SDI_PIN = -1,
-  SPI_INVALID_SDO_PIN = -2,
-  SPI_INVALID_SCK_PIN = -3,
-  SPI_INVALID_PORT    = -4,
-  SPI_PTR_NULL        = -5,
-  SPI_UNINITIALIZED   = -99
-} spi_errors_t;
+// typedef enum {
+//   SPI_INVALID_SDI_PIN = -1,
+//   SPI_INVALID_SDO_PIN = -2,
+//   SPI_INVALID_SCK_PIN = -3,
+//   SPI_INVALID_PORT    = -4,
+//   SPI_PTR_NULL        = -5,
+//   SPI_UNINITIALIZED   = -99
+// } spi_errors_t;
 
 typedef struct {
   spi_inst_t *spi;
@@ -124,15 +123,3 @@ inline float cov_bbb2f(uint8_t lsb, uint8_t xsb, uint8_t msb) {
   return (float)(((uint32_t)msb << 16) | ((uint32_t)xsb << 8) | (uint32_t)lsb);
 }
 
-// typedef enum { SPI_CS_NONE, SPI_CS_PULLUP, SPI_CS_PULLDOWN } spi_cs_t;
-
-// comm_interface_init() already does this!!!
-// void gcis_spi_init_cs(pin_t cs, spi_cs_t opt);
-
-// typedef enum {
-//   I2C_INVALID_SCL_PIN   = -1,
-//   I2C_INVALID_SDA_PIN   = -2,
-//   I2C_INVALID_PORT  = -3,
-//   I2C_PTR_NULL      = -4,
-//   I2C_UNINITIALIZED = -99
-// } i2c_errors_t;

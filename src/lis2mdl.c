@@ -88,6 +88,8 @@ lis2mdl_io_t *lis2mdl_create(interface_t type, uint8_t port, uint8_t addr_cs) {
 
   hw->comm = comm;
   hw->odr = LIS2MDL_ODR_50;
+  float m[12] = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+  memcpy(hw->mcal, m, 12 * sizeof(float));
 
   return hw;
 }
@@ -98,8 +100,6 @@ int lis2mdl_init(lis2mdl_io_t *hw) {
   const comm_interface_t *comm = hw->comm;
   const lis2mdl_odr_t odr = hw->odr;
 
-  float sm[12] = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
-  memcpy(hw->sm, sm, 12 * sizeof(float));
 
 
   //
@@ -142,7 +142,7 @@ int lis2mdl_dump(lis2mdl_io_t *hw) {
 int lis2mdl_read(lis2mdl_io_t *hw, vec3f_t *mag) {
   if (hw == NULL || mag == NULL) return GCIS_ERROR_IO_NULL;
   comm_interface_t *comm = hw->comm;
-  const float scale = 1.5; // pg 4, Table 2, mgauss/LSB
+  const float scale = 1.5f; // pg 4, Table 2, mgauss/LSB
   uint8_t *buf = hw->buffer;
 
   if (comm->read(comm->config, LIS2MDL_OUTX_L_REG, buf, LIS2MDL_BUFFER_SIZE) < 0) return -1;

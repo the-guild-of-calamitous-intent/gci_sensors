@@ -66,10 +66,14 @@ typedef struct {
   // uint8_t buffer[ICM42688P_BUFFER_SIZE];
   float acal[12];
   float gcal[12];
-  float ascale, gscale;
+  float ascale;
+  float gscale;
+
+  // change these from defaults before calling init()
   icm42688p_odr_t odr;
   icm42688p_accel_t accel;
   icm42688p_gyro_t gyro;
+
 } icm42688p_io_t;
 
 icm42688p_io_t *icm42688p_create(interface_t type, uint8_t port,

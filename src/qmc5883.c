@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h> // calloc
+#include <string.h> // memcpy
 
 // FROM QST QMC5883L Datasheet
 // -----------------------------------------------
@@ -68,6 +69,10 @@ qmc5883_io_t *qmc5883_create(uint8_t port) {
   }
 
   hw->comm = comm;
+  
+  float m[12] = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+  memcpy(hw->mcal, m, 12 * sizeof(float));
+
   return hw;
 }
 
@@ -86,7 +91,7 @@ int qmc5883_init(qmc5883_io_t *hw, qmc5883_range_t range) {
     hw->scale = 1.0f / 3000.0f;
     break;
   default:
-    return GCIS_ERROR_INIT_VALUE;
+    return GCIS_ERROR_PARAM;
   }
 
   if (comm->read(comm->config, QMC5883L_WHO_AM_I_REG, &cmd, 1) < 0) return -1;

@@ -95,11 +95,6 @@ typedef struct {
 //   int64_t t_lin;
 // } bmp3_reg_calib_data_t;
 
-// typedef struct {
-//   float pressure;
-//   float temperature;
-// } pt_t;
-
 typedef struct {
   comm_interface_t *comm;
   bmp3_reg_calib_data calib;
@@ -111,19 +106,7 @@ typedef struct {
 bmp390_io_t *bmp390_create(interface_t type, uint8_t port, uint8_t addr_cs);
 int bmp390_init(bmp390_io_t *hw);
 int bmp390_read(bmp390_io_t *hw, pt_t *pt);
-// bool bmp390_ready(bmp390_io_t *hw);
 
 #if defined __cplusplus
 }
 #endif
-
-// enum bmp_error : uint8_t {
-//   NO_ERROR,
-//   ERROR_WHOAMI,
-//   ERROR_RESET,
-//   ERROR_CAL_DATA,
-//   ERROR_ODR,
-//   ERROR_BMP390_IIR,
-//   ERROR_INT_PIN,
-//   ERROR_PWR_MODE
-// };

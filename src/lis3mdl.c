@@ -55,6 +55,10 @@ lis3mdl_io_t *lis3mdl_create(interface_t type, uint8_t port, uint8_t addr_cs) {
   }
 
   hw->comm = comm;
+
+  float m[12] = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+  memcpy(hw->mcal, m, 12 * sizeof(float));
+
   return hw;
 }
 
@@ -64,9 +68,6 @@ int lis3mdl_init(lis3mdl_io_t *hw, lis3mdl_range_t range, lis3mdl_odr_t odr) {
   comm_interface_t *comm = hw->comm;
   uint8_t id             = 0;
   uint8_t cmd;
-
-  float sm[12] = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
-  memcpy(hw->sm, sm, 12 * sizeof(float));
 
   // 1 g = 0.0001 T = 0.1 mT = 100 uT = 100,000 nT
   // m (1E3) * (1E-4) => (1E-1) = 0.1
@@ -86,7 +87,7 @@ int lis3mdl_init(lis3mdl_io_t *hw, lis3mdl_range_t range, lis3mdl_odr_t odr) {
     hw->scale = 100.0f / 1711.0f;
     break;
   default:
-    return GCIS_ERROR_INIT_VALUE;
+    return GCIS_ERROR_PARAM;
   }
 
   if (comm->read(comm->config, REG_WHO_AM_I, &id, 1) < 0) return -1;

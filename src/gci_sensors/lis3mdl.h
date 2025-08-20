@@ -43,7 +43,7 @@ typedef enum : uint8_t {
 typedef struct {
   comm_interface_t *comm;
   uint8_t buffer[LIS3MDL_BUFFER_SIZE];
-  float sm[12];
+  float mcal[12];
   float scale;
 } lis3mdl_io_t;
 
