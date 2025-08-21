@@ -80,7 +80,7 @@ icm42688p_io_t *icm42688p_create(interface_t type, uint8_t port,
                                  uint8_t addr_cs);
 int icm42688p_init(icm42688p_io_t *hw);
 int icm42688p_read(icm42688p_io_t *hw, imuf_t *imu);
-int icm42688p_calibration(icm42688p_io_t *hw, imuf_t *imu);
+// int icm42688p_calibration(icm42688p_io_t *hw, imuf_t *imu);
 // int icm42688p_dump(icm42688p_io_t *hw);
 // int icm42688p_calibrate(icm42688p_io_t *hw, uint16_t num_pts);
 

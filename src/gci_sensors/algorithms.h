@@ -12,7 +12,12 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "gci_sensors/typedefs.h"
+
 float pressure_altitude(const float pressure_pa);
+
+int vec_calibrate(float *cal, vec3f_t *v);
+int imu_calibrate(float *acal, float *gcal, imuf_t *imu);
 
 #if defined __cplusplus
 }

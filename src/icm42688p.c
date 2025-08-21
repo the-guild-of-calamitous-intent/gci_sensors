@@ -241,21 +241,21 @@ int icm42688p_read(icm42688p_io_t *hw, imuf_t *imu) {
   return 0;
 }
 
-void cm42688p_calibrate(icm42688p_io_t *hw, imuf_t *data) {
-  // if (hw == NULL) return GCIS_ERROR_IO_NULL;
-  float *acal = hw->acal;
-  float *gcal = hw->gcal;
-  // imuf_t ret;
+// void cm42688p_calibrate(icm42688p_io_t *hw, imuf_t *data) {
+//   // if (hw == NULL) return GCIS_ERROR_IO_NULL;
+//   float *acal = hw->acal;
+//   float *gcal = hw->gcal;
+//   // imuf_t ret;
 
-  vec3f_t m = data->a;
-  // accel = A * accel_meas - bias
-  data->a.x = acal[0] * m.x + acal[1] * m.y + acal[2] * m.z - acal[3];
-  data->a.y = acal[4] * m.x + acal[5] * m.y + acal[6] * m.z - acal[7];
-  data->a.z = acal[8] * m.x + acal[9] * m.y + acal[10] * m.z - acal[11];
+//   vec3f_t m = data->a;
+//   // accel = A * accel_meas - bias
+//   data->a.x = acal[0] * m.x + acal[1] * m.y + acal[2] * m.z - acal[3];
+//   data->a.y = acal[4] * m.x + acal[5] * m.y + acal[6] * m.z - acal[7];
+//   data->a.z = acal[8] * m.x + acal[9] * m.y + acal[10] * m.z - acal[11];
 
-  m = data->g;
-  // gyro = A * gyro_meas - bias
-  data->g.x = gcal[0] * m.x + gcal[1] * m.y + gcal[2] * m.z - gcal[3];
-  data->g.y = gcal[4] * m.x + gcal[5] * m.y + gcal[6] * m.z - gcal[7];
-  data->g.z = gcal[8] * m.x + gcal[9] * m.y + gcal[10] * m.z - gcal[11];
-}
+//   m = data->g;
+//   // gyro = A * gyro_meas - bias
+//   data->g.x = gcal[0] * m.x + gcal[1] * m.y + gcal[2] * m.z - gcal[3];
+//   data->g.y = gcal[4] * m.x + gcal[5] * m.y + gcal[6] * m.z - gcal[7];
+//   data->g.z = gcal[8] * m.x + gcal[9] * m.y + gcal[10] * m.z - gcal[11];
+// }

@@ -230,38 +230,38 @@ int lsm6dsox_read(lsm6dsox_io_t *hw, imuf_t *imu) {
   return 0;
 }
 
-void lsm6dsox_calibrate(lsm6dsox_io_t *hw, imuf_t *data) {
-  // if (hw == NULL) return GCIS_ERROR_IO_NULL;
-  float *acal = hw->acal;
-  float *gcal = hw->gcal;
-  // imuf_t ret;
+// void lsm6dsox_calibrate(lsm6dsox_io_t *hw, imuf_t *data) {
+//   // if (hw == NULL) return GCIS_ERROR_IO_NULL;
+//   float *acal = hw->acal;
+//   float *gcal = hw->gcal;
+//   // imuf_t ret;
 
-  vec3f_t m = data->a;
-  // accel = A * accel_meas - bias
-  data->a.x = acal[0] * m.x + acal[1] * m.y + acal[2] * m.z - acal[3];
-  data->a.y = acal[4] * m.x + acal[5] * m.y + acal[6] * m.z - acal[7];
-  data->a.z = acal[8] * m.x + acal[9] * m.y + acal[10] * m.z - acal[11];
+//   vec3f_t m = data->a;
+//   // accel = A * accel_meas - bias
+//   data->a.x = acal[0] * m.x + acal[1] * m.y + acal[2] * m.z - acal[3];
+//   data->a.y = acal[4] * m.x + acal[5] * m.y + acal[6] * m.z - acal[7];
+//   data->a.z = acal[8] * m.x + acal[9] * m.y + acal[10] * m.z - acal[11];
 
-  m = data->g;
-  // gyro = A * gyro_meas - bias
-  data->g.x = gcal[0] * m.x + gcal[1] * m.y + gcal[2] * m.z - gcal[3];
-  data->g.y = gcal[4] * m.x + gcal[5] * m.y + gcal[6] * m.z - gcal[7];
-  data->g.z = gcal[8] * m.x + gcal[9] * m.y + gcal[10] * m.z - gcal[11];
-}
+//   m = data->g;
+//   // gyro = A * gyro_meas - bias
+//   data->g.x = gcal[0] * m.x + gcal[1] * m.y + gcal[2] * m.z - gcal[3];
+//   data->g.y = gcal[4] * m.x + gcal[5] * m.y + gcal[6] * m.z - gcal[7];
+//   data->g.z = gcal[8] * m.x + gcal[9] * m.y + gcal[10] * m.z - gcal[11];
+// }
 
-int lsm6dsox_read_calibrated(lsm6dsox_io_t *hw, imuf_t *ret) {
-  if (hw == NULL) return GCIS_ERROR_IO_NULL;
-  if (lsm6dsox_read(hw, ret) < 0) return -1;
-  lsm6dsox_calibrate(hw, ret);
-  return 0;
-}
+// int lsm6dsox_read_calibrated(lsm6dsox_io_t *hw, imuf_t *ret) {
+//   if (hw == NULL) return GCIS_ERROR_IO_NULL;
+//   if (lsm6dsox_read(hw, ret) < 0) return -1;
+//   lsm6dsox_calibrate(hw, ret);
+//   return 0;
+// }
 
-void lsm6dsox_set_cal(lsm6dsox_io_t *hw, float a[12], float g[12]) {
-  // if (hw == NULL) return GCIS_ERROR_IO_NULL;
-  const uint32_t size = 12 * sizeof(float);
-  memcpy(hw->acal, a, size);
-  memcpy(hw->gcal, g, size);
-}
+// void lsm6dsox_set_cal(lsm6dsox_io_t *hw, float a[12], float g[12]) {
+//   // if (hw == NULL) return GCIS_ERROR_IO_NULL;
+//   const uint32_t size = 12 * sizeof(float);
+//   memcpy(hw->acal, a, size);
+//   memcpy(hw->gcal, g, size);
+// }
 
 // int lsm6dsox_i2c_init(lsm6dsox_io_t *hw, uint8_t port, uint8_t addr, lsm6dsox_xl_range_t accel_range, lsm6dsox_g_range_t gyro_range, lsm6dsox_odr_t odr) {
 //   if (hw == NULL) hw = lsm6dsox_create(I2C_INTERFACE, port, addr);
